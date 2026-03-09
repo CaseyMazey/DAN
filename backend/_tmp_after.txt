@@ -1,0 +1,1238 @@
+﻿  GRUNDEINSTELLUNGEN & HILFSVARIABLEN
+   --------------------------------------------------------------------------
+   Hier initialisieren wir alle benötigten DOM-Elemente und Tools.
+   Dazu gehören:
+     - hourFormatter ? formatiert Stunden in deutsches Format
+     - Selektoren fÃ¼r Formulare, Modals, Eingaben
+     - Variablen zum Speichern von Referenzen (z. B. fÃ¼r Bearbeiten)
+     - Hilfsfunktionen fÃ¼rs SchlieÃŸen der Modals
+   ========================================================================== */
+
+let draggedCard = null;  // Wird beim Drag&Drop gesetzt
+
+/* Formatierer fÃ¼r Stundenwerte (z.B. 1.5 ? 1,50) */
+const hourFormatter = new Intl.NumberFormat('de-DE', { 
+    minimumFractionDigits: 2, 
+    maximumFractionDigits: 2 
+});
+
+/* ----------- DOM-Elemente fÃ¼r Neue-Aufgabe-Modal ----------- */
+const categorySelect         = $('select[name="kategorie"]');
+const optionalHoursGroup     = $('#optionalHoursGroup');
+const optionalStundenInput   = $('#optionalStunden');
+const trainingFields         = $('#trainingFields');
+const trainingStundenInput   = $('#trainingStunden');
+const stundenTypSelect       = $('#trainingStundenTyp');
+
+/* ----------- Archiv-DOM ----------- */
+const archiveList            = $('#archiveList');
+const archiveEmpty           = $('#archiveEmpty');
+
+/* ----------- Modals initialisieren ----------- */
+const editModalEl            = document.getElementById('editAufgabeModal');
+const editModal              = editModalEl ? new bootstrap.Modal(editModalEl) : null;
+
+const newTaskModalEl         = document.getElementById('neuAufgabeModal');
+const newTaskModal           = newTaskModalEl ? 
+                                bootstrap.Modal.getOrCreateInstance(newTaskModalEl) : null;
+
+const stundenConfigModalEl   = document.getElementById('stundenConfigModal');
+const stundenConfigModal     = stundenConfigModalEl ? 
+                                bootstrap.Modal.getOrCreateInstance(stundenConfigModalEl) : null;
+
+/* ----------- Formular fÃ¼r Bearbeitung einer Aufgabe ----------- */
+const editForm               = $('#editAufgabeForm');
+const editCategorySelect     = $('#editKategorie');
+const editOptionalHoursGroup = $('#editOptionalHoursGroup');
+const editOptionalStundenInput = $('#editOptionalStunden');
+const editTrainingFields     = $('#editTrainingFields');
+const editStundenInput       = $('#editStunden');
+const editStundenTypSelect   = $('#editStundenTyp');
+const editStatusSelect       = $('#editStatus');
+
+let editCardRef = null;  // Referenz auf die Karte, die gerade bearbeitet wird
+
+
+/* ==========================================================================
+   HELFERFUNKTIONEN
+   --------------------------------------------------------------------------
+   Diese Funktionen werden an vielen Stellen im Code benötigt.
+   Sie sind zentral gesammelt, damit du sie Ã¼berall wiederverwenden kannst.
+   ========================================================================== */
+
+/* --------------------------------------------------------------
+   escapeHtml()
+   --------------------------------------------------------------
+   Entfernt HTML-Sonderzeichen aus Strings, bevor sie in das DOM
+   eingesetzt werden.  
+   Verhindert u.a. XSS-Probleme und kaputtes Markup.
+---------------------------------------------------------------- */
+function escapeHtml(value) {
+    if (value === null || value === undefined) return '';
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+/* --------------------------------------------------------------
+   formatHoursValue()
+   --------------------------------------------------------------
+   Nutzt den oben definierten deutschen NumberFormatter, um
+   Stundenwerte wie 4 ? "4,00" darzustellen.
+---------------------------------------------------------------- */
+function formatHoursValue(value) {
+    const num = parseFloat(value);
+    return hourFormatter.format(isNaN(num) ? 0 : num);
+}
+
+/* --------------------------------------------------------------
+   formatInputValue()
+   --------------------------------------------------------------
+   Vereinheitlicht Eingabewerte, bevor sie wieder im Input-Feld
+   angezeigt werden.
+
+   Beispiel:
+      "4.0000" ? "4"
+      "2.34567" ? "2.35"
+---------------------------------------------------------------- */
+function formatInputValue(value) {
+    const num = parseFloat(value);
+    if (isNaN(num)) return '';
+    return (Math.round(num * 100) / 100).toString();
+}
+
+/* --------------------------------------------------------------
+   formatWeekLabel()
+   --------------------------------------------------------------
+   Baut aus zwei ISO-Daten ("2025-01-20") ein schönes deutsches
+   Wochenlabel:
+
+      "20.01 - 24.01.2025"
+---------------------------------------------------------------- */
+function formatWeekLabel(start, end) {
+    if (!start || !end) return 'Aktuelle Woche';
+
+    const startDate = new Date(start);
+    const endDate   = new Date(end);
+
+    if (isNaN(startDate) || isNaN(endDate)) return 'Aktuelle Woche';
+
+    const startText = startDate.toLocaleDateString('de-DE', { 
+        day: '2-digit', month: '2-digit' 
+    });
+
+    const endText = endDate.toLocaleDateString('de-DE', { 
+        day: '2-digit', month: '2-digit', year: 'numeric' 
+    });
+
+    return `${startText} - ${endText}`;
+}
+
+/* --------------------------------------------------------------
+   formatCategoryLabel()
+   --------------------------------------------------------------
+   Vereinheitlicht Kategorien fÃ¼r die Anzeige auf Karten und
+   im Archiv.
+
+   Intern gespeichert: "betrieb", "unterweisung", "berufsschule"
+   Anzeige:            Betrieb, Unterweisung, Berufsschule
+---------------------------------------------------------------- */
+function formatCategoryLabel(value) {
+    const key = (value || '').toString().trim().toLowerCase();
+    if (key === 'betrieb')       return 'Betrieb';
+    if (key === 'berufsschule')  return 'Berufsschule';
+    if (key === 'unterweisung')  return 'Unterweisung';
+    if (!key) return '';
+    return key.charAt(0).toUpperCase() + key.slice(1);
+}
+
+/* --------------------------------------------------------------
+   hideModal()
+   --------------------------------------------------------------
+   Einige Browser/Bootstrap-Versionen behalten Backdrops stehen,
+   wenn man Modals sehr schnell öffnet/schlieÃŸt (z. B. durch AJAX).
+
+   Diese Funktion:
+      - schlieÃŸt das Modal zuverlÃ¤ssig
+      - entfernt Backdrops
+      - stellt sicher, dass Body wieder scrollbar wird
+---------------------------------------------------------------- */
+function hideModal(modalInstance, selector) {
+    // Bootstrap-intern schlieÃŸen
+    if (modalInstance && typeof modalInstance.hide === 'function') {
+        modalInstance.hide();
+    }
+
+    // Fallback fÃ¼r den DOM-Zustand
+    const $modal = selector
+        ? $(selector)
+        : (modalInstance && modalInstance._element ? $(modalInstance._element) : $());
+
+    setTimeout(function() {
+        if ($modal.length) {
+            $modal.removeClass('show')
+                  .attr('aria-hidden', 'true');
+        }
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open').css('padding-right', '');
+    }, 120);
+}
+
+/* --------------------------------------------------------------
+   Workaround fÃ¼r Bootstrap: 
+   Entfernt Backdrops nach dem SchlieÃŸen aller Modals
+---------------------------------------------------------------- */
+$(document).on('hidden.bs.modal', function() {
+    $('.modal-backdrop').remove();
+    $('body').removeClass('modal-open')
+             .css('padding-right', '');
+});
+
+/* --------------------------------------------------------------
+   updateProgressBar()
+   --------------------------------------------------------------
+   Passt die Breite einer Bootstrap-Progressbar anhand der
+   Prozentwerte an.
+
+   - selector  = z. B. "#betriebProgress"
+   - used      = bereits verbrauchte Stunden
+   - limit     = maximale Stunden (Konfiguration)
+---------------------------------------------------------------- */
+function updateProgressBar(selector, used, limit) {
+    const percentage = limit > 0 ? Math.min(100, (used / limit) * 100) : 0;
+    $(selector).css('width', `${percentage}%`);
+}
+
+/* --------------------------------------------------------------
+   buildHoursHtml()
+   --------------------------------------------------------------
+   Baut die 4,00 Std : Betrieb-Anzeige fÃ¼r die Task-Karten.
+
+   ? RÃ¼ckgabe ist HTML-Code, der direkt in die Karte eingesetzt
+     werden kann.
+---------------------------------------------------------------- */
+function buildHoursHtml(hours, type) {
+    const num = parseFloat(hours);
+    if (!num || num <= 0) return '';
+
+    const label = type === 'berufsschule' ? 'Berufsschule' : 'Betrieb';
+    return `
+        <div class="task-hours small fw-semibold mt-1">
+            ${formatHoursValue(num)} Std : ${label}
+        </div>`;
+}
+
+
+/* ==========================================================================
+   KARTENBAU, ARCHIV UND UI-UPDATES
+   --------------------------------------------------------------------------
+   Dieser Block ist das HerzstÃ¼ck des dynamischen UI-Verhaltens.
+   Hier wird entschieden:
+     - Wie eine Karte (Task) gebaut wird
+     - Wie Archiv-EintrÃ¤ge aussehen
+     - Wie Aufgaben optisch aktualisiert werden
+     - Wie Aufgaben zwischen Spalten verschoben werden
+   ========================================================================== */
+
+
+/* --------------------------------------------------------------
+   buildCardMarkup(task)
+   --------------------------------------------------------------
+   Baut das komplette HTML einer Kanban-Karte als String.
+
+   ? Wird genutzt:
+       - Beim Erstellen einer neuen Aufgabe
+       - Beim Wiederherstellen aus dem Archiv
+       - Wenn ein AJAX-Fallback greift
+---------------------------------------------------------------- */
+function buildCardMarkup(task) {
+
+    // Stundentext, falls vorhanden
+    const hoursHtml = buildHoursHtml(task.stunden, task.stunden_typ);
+
+    // Lesbares Label (Betrieb / Unterweisung / ...)
+    const categoryLabel = formatCategoryLabel(task.kategorie);
+
+    // Anzeige fuer Status-Badge
+    const statusText = escapeHtml(task.status_label || task.status || '');
+
+    return `
+        <div class="kanban-card"
+             data-id="${task.id}"
+             data-titel="${escapeHtml(task.titel || '')}"
+             data-beschreibung="${escapeHtml(task.beschreibung || '')}"
+             data-kategorie="${escapeHtml(task.kategorie || '')}"
+             data-status="${escapeHtml(task.status || '')}"
+             data-stunden="${escapeHtml(task.stunden ?? '')}"
+             data-stunden_typ="${escapeHtml(task.stunden_typ ?? '')}"
+             draggable="true">
+
+            <div class="task-left">
+                <strong class="task-title">
+                    ${escapeHtml(task.titel || '')}
+                </strong>
+
+                <p>${escapeHtml(task.beschreibung || '')}</p>
+
+                <small class="text-muted">${escapeHtml(categoryLabel)}</small>
+
+                ${hoursHtml}
+            </div>
+
+            <div class="task-right task-actions">
+
+                <button type="button" class="editButton edit-task" aria-label="Aufgabe bearbeiten">
+                    <svg viewBox="0 0 24 24" class="pencil">
+                        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="#B5BAC1"></path>
+                        <path d="M20.71 7.04a1.004 1.004 0 000-1.42l-2.34-2.34a1.004 1.004 0 00-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z" fill="#B5BAC1"></path>
+                    </svg>
+                    <span class="tooltip">Bearbeiten</span>
+                </button>
+
+                <button type="button" class="archive-task archive-task-btn" aria-label="Aufgabe archivieren">
+                    <svg viewBox="0 0 24 24" class="archive-icon" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    <span class="tooltip">Archivieren</span>
+                </button>
+
+                <button type="button" class="deleteButton delete-task" aria-label="Aufgabe löschen">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 50 59" class="bin">
+                        <path fill="#B5BAC1" d="M0 7.5C0 5.01472 2.01472 3 4.5 3H45.5C47.9853 3 50 5.01472 50 7.5V7.5C50 8.32843 49.3284 9 48.5 9H1.5C0.671571 9 0 8.32843 0 7.5V7.5Z"></path>
+                        <path fill="#B5BAC1" d="M17 3C17 1.34315 18.3431 0 20 0H29.3125C30.9694 0 32.3125 1.34315 32.3125 3V3H17V3Z"></path>
+                        <path fill="#B5BAC1" d="M2.18565 18.0974C2.08466 15.821 3.903 13.9202 6.18172 13.9202H43.8189C46.0976 13.9202 47.916 15.821 47.815 18.0975L46.1699 55.1775C46.0751 57.3155 44.314 59.0002 42.1739 59.0002H7.8268C5.68661 59.0002 3.92559 57.3155 3.83073 55.1775L2.18565 18.0974ZM18.0003 49.5402C16.6196 49.5402 15.5003 48.4209 15.5003 47.0402V24.9602C15.5003 23.5795 16.6196 22.4602 18.0003 22.4602C19.381 22.4602 20.5003 23.5795 20.5003 24.9602V47.0402C20.5003 48.4209 19.381 49.5402 18.0003 49.5402ZM29.5003 47.0402C29.5003 48.4209 30.6196 49.5402 32.0003 49.5402C33.381 49.5402 34.5003 48.4209 34.5003 47.0402V24.9602C34.5003 23.5795 33.381 22.4602 32.0003 22.4602C30.6196 22.4602 29.5003 23.5795 29.5003 24.9602V47.0402Z"></path>
+                        <path fill="#B5BAC1" d="M2 13H48L47.6742 21.28H2.32031L2 13Z"></path>
+                    </svg>
+                    <span class="tooltip">Löschen</span>
+                </button>
+            </div>
+
+            <span class="badge-status badge-${escapeHtml(task.status || '')}">
+                ${statusText}
+            </span>
+        </div>
+    `;
+}
+
+
+/* --------------------------------------------------------------
+   addCardBelowHeader(columnElement, markup)
+   --------------------------------------------------------------
+   FÃ¼gt eine neu erstellte Karte *direkt unterhalb* des Spalten-
+   Titels ein.
+
+   Dadurch bleiben neue Karten immer ganz oben sichtbar.
+---------------------------------------------------------------- */
+function addCardBelowHeader($column, cardMarkup) {
+    if (!$column || !$column.length) return;
+
+    const $cardEl = $(cardMarkup);
+    const $header = $column.children('h4').first();
+
+    if ($header.length) {
+        // direkt unter H4 einfÃ¼gen
+        $cardEl.insertAfter($header);
+    } else {
+        // falls keine Ãœberschrift gefunden wird, oben einfÃ¼gen
+        $column.prepend($cardEl);
+    }
+}
+
+
+/* --------------------------------------------------------------
+   formatArchiveDate()
+   --------------------------------------------------------------
+   Konvertiert Server-Datum in:
+       "24.01.2025, 14:22"
+---------------------------------------------------------------- */
+function formatArchiveDate(value) {
+    if (!value) return new Date().toLocaleString('de-DE');
+
+    const normalized = value.replace(' ', 'T'); // manche Server liefern kein "T"
+    const date = new Date(normalized);
+
+    if (isNaN(date)) return value;
+    return date.toLocaleString('de-DE', { 
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+
+/* --------------------------------------------------------------
+   appendArchiveEntry(entry)
+   --------------------------------------------------------------
+   Baut einen neuen Eintrag fÃ¼rs Archiv und setzt ihn GANZ OBEN ein.
+
+   entry = {
+       id, title, category, archived_at, status
+   }
+---------------------------------------------------------------- */
+function appendArchiveEntry(entry) {
+
+    const categoryText = formatCategoryLabel(entry.category || '-');
+
+    const html = `
+        <div class="archive-entry" data-archive-id="${entry.id || ''}">
+            
+            <div class="d-flex justify-content-between align-items-center">
+
+                <strong>${escapeHtml(entry.title || '')}</strong>
+
+                <div class="archive-actions">
+                    <span class="badge bg-light text-dark">${escapeHtml(categoryText)}</span>
+
+                    <!-- Wiederherstellen -->
+                    <button type="button" class="archive-restore-btn" aria-label="Aufgabe wiederherstellen">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                             viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 14 4 9 9 4"></polyline>
+                            <path d="M20 20v-5a7 7 0 0 0-7-7H4"></path>
+                        </svg>
+                    </button>
+                </div>
+
+            </div>
+
+            <div class="meta">
+                Beendet am ${escapeHtml(formatArchiveDate(entry.archived_at))}
+            </div>
+        </div>
+    `;
+
+    // oben einfÃ¼gen
+    archiveList.prepend(html);
+
+    // "Archiv ist leer"-Text ausblenden
+    archiveEmpty.addClass('d-none');
+}
+
+
+/* --------------------------------------------------------------
+   updateArchiveEmptyState()
+   --------------------------------------------------------------
+   PrÃ¼ft, ob das Archiv leer ist und zeigt/versteckt den Hinweis.
+---------------------------------------------------------------- */
+function updateArchiveEmptyState() {
+    const hasEntries = archiveList.children('.archive-entry').length > 0;
+    archiveEmpty.toggleClass('d-none', hasEntries);
+}
+
+
+/* --------------------------------------------------------------
+   applyCardUpdates($card, task)
+   --------------------------------------------------------------
+   Aktualisiert ALLE Daten einer vorhandenen Karte:
+
+   - Titel
+   - Beschreibung
+   - Kategorie
+   - Badge
+   - Stundenanzeige
+   - data-Attribute (damit bearbeiten funktioniert)
+---------------------------------------------------------------- */
+function applyCardUpdates($card, task) {
+
+    /* Daten-Attribute aktualisieren */
+    $card.attr({
+        'data-titel': task.titel || '',
+        'data-beschreibung': task.beschreibung || '',
+        'data-kategorie': task.kategorie || '',
+        'data-status': task.status || '',
+        'data-stunden': task.stunden ?? '',
+        'data-stunden_typ': task.stunden_typ ?? ''
+    }).data({
+        titel: task.titel || '',
+        beschreibung: task.beschreibung || '',
+        kategorie: task.kategorie || '',
+        status: task.status || '',
+        stunden: task.stunden ?? '',
+        stunden_typ: task.stunden_typ ?? ''
+    });
+
+    /* Sichtbare Inhalte aktualisieren */
+    const categoryLabel = formatCategoryLabel(task.kategorie);
+    const badgeText     = (task.status_label || task.status || '').toString();
+
+    $card.find('strong').first().text(task.titel || '');
+    $card.find('p').first().text(task.beschreibung || '');
+    $card.find('small.text-muted').first().text(categoryLabel);
+
+    /* Badge-Klasse aktualisieren */
+    $card.find('.badge-status')
+        .removeClass('badge-offen badge-in_bearbeitung badge-fertig')
+        .addClass('badge-' + task.status)
+        .text(badgeText);
+
+    /* Stundenanzeige aktualisieren (immer in der linken Spalte) */
+    const hoursHtml = buildHoursHtml(task.stunden, task.stunden_typ);
+    const leftCol = $card.find('.task-left').first();
+    const existingHours = leftCol.find('.task-hours').first();
+
+    if (hoursHtml) {
+        existingHours.length
+            ? existingHours.replaceWith($(hoursHtml))
+            : leftCol.append($(hoursHtml));
+    } else {
+        existingHours.remove();
+    }
+}
+
+
+/* --------------------------------------------------------------
+   moveCardToStatus($card, status)
+   --------------------------------------------------------------
+   Verschiebt eine Karte in die passende Kanban-Spalte.
+   Mit animiertem Fade-Out/Fade-In fÃ¼r bessere UI-Optik.
+---------------------------------------------------------------- */
+function moveCardToStatus($card, status) {
+    const column = $(`.kanban-column[data-status='${status}']`);
+    if (column.length) {
+        $card.fadeOut(150, function() {
+            $card.appendTo(column).fadeIn(200);
+        });
+    }
+}
+
+
+/* --------------------------------------------------------------
+   EDIT-FORMULAR MIT DATEN DER ANGEKLICKTEN KARTE BEFÃ¼LLEN
+   ----------------------------------------------------------------
+   - Wird aufgerufen, wenn der Bearbeiten-Button einer Karte geklickt wird
+   - Liest alle data-* Attribute aus der Karte und Ã¼bertrÃ¼gt sie
+     in die Felder des Bearbeiten-Modals
+---------------------------------------------------------------- */
+function populateEditForm($card) {
+    // ID der Aufgabe in verstecktes Feld schreiben
+    $('#editAufgabeId').val($card.data('id'));
+
+    // Titel & Beschreibung
+    $('#editTitel').val($card.data('titel') || '');
+    $('#editBeschreibung').val($card.data('beschreibung') || '');
+
+    // Kategorie (Standard: 'betrieb', falls leer)
+    const kat = $card.data('kategorie') || 'betrieb';
+    editCategorySelect.val(kat);
+
+    // Stunden-Werte in beide Felder kopieren
+    // (optional-Stunden und Schulungs-Stunden)
+    const stundenVal = $card.data('stunden') || '';
+    editOptionalStundenInput.val(stundenVal);
+    editStundenInput.val(stundenVal);
+
+    // Stunden-Typ (von wo abziehen?)  default 'betrieb'
+    editStundenTypSelect.val($card.data('stunden_typ') || 'betrieb');
+
+    // Je nach Kategorie: Schulungsfelder sichtbar/unsichtbar
+    toggleEditTrainingFields(kat);
+
+    // Status (offen / in Bearbeitung / fertig)
+    editStatusSelect.val($card.data('status') || 'offen');
+}
+
+
+/* --------------------------------------------------------------
+   INITIAL: TRAINING-FELDER (NEUE AUFGABE)
+   - beim Laden die aktuelle Auswahl auswerten
+   - bei Ã„nderung der Kategorie erneut schalten
+---------------------------------------------------------------- */
+toggleTrainingFields(categorySelect.val());
+
+categorySelect.on('change', function() {
+    toggleTrainingFields($(this).val());
+});
+
+
+/* --------------------------------------------------------------
+   INITIAL: TRAINING-FELDER (EDITIEREN)
+   - beim öffnen des Bearbeiten-Modals
+   - und bei Ã„nderung der Kategorie im Edit-Modal
+---------------------------------------------------------------- */
+toggleEditTrainingFields(editCategorySelect.val());
+
+editCategorySelect.on('change', function() {
+    toggleEditTrainingFields($(this).val());
+});
+
+
+/* --------------------------------------------------------------
+   FORMULAR: STUNDEN-KONFIG (MAX-WOCHE, BETRIEB, SCHULE)
+   ----------------------------------------------------------------
+   - Speichert Einstellungen Ã¼ber stunden_config_api.php
+   - Bei Erfolg: UI aktualisieren + Erfolgsmeldung + Modal schlieÃŸen
+   - Bei Fehler: Fehlermeldung anzeigen
+---------------------------------------------------------------- */
+$('#stundenConfigForm').on('submit', function(e) {
+    e.preventDefault();
+
+    const feedback = $('#stundenConfigFeedback');
+
+    // Feedback-Bereich immer zuerst leeren & verstecken
+    feedback
+        .addClass('d-none')
+        .removeClass('alert-success alert-danger')
+        .text('');
+
+    $.post(
+        'stunden_config_api.php',
+        $(this).serialize(),
+        function(resp) {
+            if (resp && resp.success) {
+                // Neue Werte ins Summary schreiben
+                updateStundenSummary(resp);
+
+                feedback
+                    .removeClass('d-none')
+                    .addClass('alert-success')
+                    .text('Einstellungen gespeichert.');
+
+                // Modal nach kurzer Zeit schlieÃŸen
+                setTimeout(function() {
+                    hideModal(stundenConfigModal, '#stundenConfigModal');
+                }, 900);
+            } else {
+                const message =
+                    resp && resp.msg
+                        ? resp.msg
+                        : 'Speichern nicht möglich.';
+
+                feedback
+                    .removeClass('d-none')
+                    .addClass('alert-danger')
+                    .text(message);
+            }
+        },
+        'json'
+    ).fail(function() {
+        feedback
+            .removeClass('d-none')
+            .addClass('alert-danger')
+            .text('Serverfehler beim Speichern.');
+    });
+});
+
+
+/* --------------------------------------------------------------
+   RESET BEI SCHLIESSEN DES STUNDEN-KONFIG-MODALS
+   - Feedback wird geleert
+---------------------------------------------------------------- */
+$('#stundenConfigModal').on('hidden.bs.modal', function() {
+    $('#stundenConfigFeedback')
+        .addClass('d-none')
+        .removeClass('alert-success alert-danger')
+        .text('');
+});
+
+
+/* ==========================================================================
+   DRAG & DROP (START / ENDE / DROP-ZONE)
+   --------------------------------------------------------------------------
+   Diese drei Listener sorgen fÃ¼r:
+     - Karte kann gezogen werden
+     - visuelles Markieren der "dragging" Karte
+     - Zielspalten akzeptieren Drop-VorgÃ¤nge
+   ========================================================================== */
+
+// Drag starten: merken, welche Karte gerade gezogen wird
+$(document).on('dragstart', '.kanban-card', function(e) {
+    draggedCard = this;
+    $(this).addClass('dragging');
+
+    // FÃ¼r Firefox: irgendeinen Text setzen, sonst kein Drag & Drop
+    e.originalEvent.dataTransfer.setData('text', '');
+});
+
+// Drag beendet: Optik wieder normal, Referenz löschen
+$(document).on('dragend', '.kanban-card', function() {
+    $(this).removeClass('dragging');
+    draggedCard = null;
+});
+
+// Spalten mÃ¼ssen den Drop zulassen ? preventDefault()
+$('.kanban-column').on('dragover', function(e) {
+    e.preventDefault();
+});
+
+
+/* ==========================================================================
+   DROP-EVENT: KARTE IN ANDERE SPALTE ZIEHEN
+   --------------------------------------------------------------------------
+   - UI sofort aktualisieren (optimistic UI)
+   - Server per AJAX Ã¼ber neuen Status informieren
+   - Reaktion:
+        -ggf. Archivieren
+        -sonst Karte mit neuen Statusdaten updaten
+        -Stunden-Ãœbersicht aktualisieren
+   ========================================================================== */
+$('.kanban-column').on('drop', function() {
+    if (!draggedCard) return;
+
+    const $targetColumn = $(this);
+    const newStatus     = $targetColumn.data('status');     // offen / in_bearbeitung / fertig
+    const $card         = $(draggedCard);
+    const taskId        = $card.data('id');
+
+    // Sofortige Bewegung im UI (fÃ¼r flÃ¼ssiges Feeling)
+    $card.fadeOut(150, function() {
+        $card.appendTo($targetColumn);
+        $card.fadeIn(200);
+    });
+
+    // Server Ã¼ber Statuswechsel informieren
+    $.ajax({
+        url: 'aufgaben_update.php',
+        type: 'POST',
+        dataType: 'json',
+        data: {
+            id: taskId,
+            status: newStatus,
+
+            /* Wenn Status "in_bearbeitung":
+               - Kann serverseitig genutzt werden, um automatisch
+                 einen Wochenbericht anzulegen/einzutragen. */
+            auto_wochenbericht: newStatus === 'in_bearbeitung' ? 1 : 0
+        }
+    }).done(function(response) {
+        if (response && response.success) {
+
+            // Fall: Server sagt, Aufgabe wurde archiviert
+            if (response.archiviert) {
+                const title    = $card.find('strong').text().trim();
+                const category = $card.find('small.text-muted').text().trim();
+
+                $card.fadeOut(150, function() {
+                    $(this).remove();
+                });
+
+                appendArchiveEntry({
+                    id: response.id,
+                    title: title,
+                    category: category,
+                    archived_at: response.archiviert_am,
+                    status: response.status
+                });
+
+            } else {
+                // Nur Status / Label / Stunden aktualisieren
+                applyCardUpdates($card, {
+                    titel: $card.data('titel'),
+                    beschreibung: $card.data('beschreibung'),
+                    kategorie: $card.data('kategorie'),
+                    status: newStatus,
+                    status_label: response.status_label || '',
+                    stunden: $card.data('stunden'),
+                    stunden_typ: $card.data('stunden_typ')
+                });
+            }
+
+            // Stunden-Ãœbersicht oben aktualisieren
+            refreshStundenSummary();
+
+        } else if (response && response.msg) {
+            alert(response.msg);
+        } else {
+            alert('Aufgabe konnte nicht aktualisiert werden (unerwartete Antwort).');
+        }
+
+    }).fail(function(xhr) {
+
+        // Fallback: Versuchen, trotz HTTP-Fehler evtl. JSON-Erfolg auszuwerten
+        handleAjaxFailWithSuccessFallback(
+            xhr,
+            function(data) {
+
+                const archiveFlag = data.archiviert;
+
+                if (archiveFlag) {
+                    const title    = $card.find('strong').text().trim();
+                    const category = $card.find('small.text-muted').text().trim();
+
+                    $card.fadeOut(150, function() {
+                        $(this).remove();
+                    });
+
+                    appendArchiveEntry({
+                        id: data.id,
+                        title: title,
+                        category: category,
+                        archived_at: data.archiviert_am,
+                        status: data.status
+                    });
+
+                } else {
+                    const statusLabel = data.status_label || data.status || newStatus;
+
+                    applyCardUpdates($card, {
+                        titel: $card.data('titel'),
+                        beschreibung: $card.data('beschreibung'),
+                        kategorie: $card.data('kategorie'),
+                        status: data.status || newStatus,
+                        status_label: statusLabel,
+                        stunden: $card.data('stunden'),
+                        stunden_typ: $card.data('stunden_typ')
+                    });
+                }
+
+                refreshStundenSummary();
+            },
+            'Aufgabe konnte nicht aktualisiert werden. Serverantwort: '
+        );
+    });
+});
+
+
+/* ==========================================================================
+   ARCHIV: AUFGABE WIEDERHERSTELLEN
+   --------------------------------------------------------------------------
+   - Klick auf "Wiederherstellen" bei einer Archiv-Eintrag
+   - Sendet restore_id an aufgaben_create.php
+   - Entfernt Eintrag aus Archivliste
+   - FÃ¼gt Karte wieder im passenden Status im Board ein
+   ========================================================================== */
+$(document).on('click', '.archive-restore-btn', function(e) {
+    e.preventDefault();
+
+    const btn   = $(this);
+    const entry = btn.closest('.archive-entry');
+    const id    = parseInt(entry.data('archive-id'), 10);
+
+    if (!id) return;
+
+    // Doppelklick-Schutz
+    btn.prop('disabled', true);
+
+    $.ajax({
+        url: 'aufgaben_create.php',
+        type: 'POST',
+        data: { restore_id: id },
+        dataType: 'json'
+    }).done(function(resp) {
+
+        if (resp && resp.success) {
+
+            // Archiv-Eintrag ausblenden/entfernen
+            entry.fadeOut(150, function() {
+                $(this).remove();
+                updateArchiveEmptyState();
+            });
+
+            // Status bestimmen (Standard: offen)
+            const status = resp.status || 'offen';
+            resp.status_label = resp.status_label || status;
+
+            // Karte wieder im Board einfÃ¼gen (unter Ãœberschrift)
+            const statusCol = $(`.kanban-column[data-status='${status}']`);
+            addCardBelowHeader(statusCol, buildCardMarkup(resp));
+
+        } else {
+            const message =
+                resp && resp.msg
+                    ? resp.msg
+                    : 'Aufgabe konnte nicht wiederhergestellt werden.';
+            alert(message);
+            btn.prop('disabled', false);
+        }
+
+    }).fail(function(xhr) {
+
+        // Fallback: auch hier Versuch, JSON-Erfolg zu lesen
+        handleAjaxFailWithSuccessFallback(
+            xhr,
+            function(data) {
+
+                entry.fadeOut(150, function() {
+                    $(this).remove();
+                    updateArchiveEmptyState();
+                });
+
+                const status = data.status || 'offen';
+                data.status_label = data.status_label || status;
+
+                const statusCol = $(`.kanban-column[data-status='${status}']`);
+                addCardBelowHeader(statusCol, buildCardMarkup(data));
+            },
+            'Aufgabe konnte nicht wiederhergestellt werden. Serverantwort: '
+        );
+
+        btn.prop('disabled', false);
+    });
+});
+
+
+/* ==========================================================================
+   FORMULAR: NEUE AUFGABE
+   --------------------------------------------------------------------------
+   - Wird abgeschickt, sobald im "Neue Aufgabe"-Modal auf Speichern geklickt wird
+   - Schickt alle Felder an aufgaben_create.php
+   - Reaktion:
+       - evtl. direkt archiviert ? Archivliste ergÃ¤nzen
+       - sonst in passende Kanban-Spalte einfÃ¼gen
+       - Formular zurÃ¼cksetzen
+       - StundenÃ¼bersicht aktualisieren, wenn Status != "offen"
+   ========================================================================== */
+$('#aufgabeForm').submit(function(e) {
+    e.preventDefault();
+
+    const formData = $(this).serialize();
+
+    $.ajax({
+        url: 'aufgaben_create.php',
+        type: 'POST',
+        dataType: 'json',
+        data: formData
+    }).done(function(resp) {
+
+        if (resp && resp.success) {
+
+            // Modal schlieï¿½en
+            hideModal(newTaskModal, '#neuAufgabeModal');
+
+            if (resp.archiviert) {
+                // Aufgabe ist direkt im Archiv gelandet
+                appendArchiveEntry({
+                    id: resp.id,
+                    title: resp.titel,
+                    category: resp.kategorie,
+                    archived_at: resp.archiviert_am,
+                    status: resp.status
+                });
+            } else {
+                // Aufgabe direkt in die entsprechende Spalte packen
+                const statusCol = $(`.kanban-column[data-status='${resp.status}']`);
+                resp.status_label = resp.status_label || resp.status;
+                addCardBelowHeader(statusCol, buildCardMarkup(resp));
+            }
+
+            // Formular auf Ausgangszustand zurÃ¼cksetzen
+            $('#aufgabeForm')[0].reset();
+            categorySelect.val('betrieb');
+            toggleTrainingFields('betrieb');
+
+            // Wenn nicht "offen": StundenÃ¼bersicht neu laden
+            if (resp.status !== 'offen') {
+                refreshStundenSummary();
+            }
+
+        } else {
+            const message =
+                resp && resp.msg
+                    ? resp.msg
+                    : 'Aufgabe konnte nicht gespeichert werden.';
+            alert(message);
+        }
+
+    }).fail(function(xhr) {
+
+        // Fallback: JSON aus Fehlantwort versuchen zu lesen
+        handleAjaxFailWithSuccessFallback(
+            xhr,
+            function(resp) {
+                hideModal(newTaskModal, '#neuAufgabeModal');
+
+                if (resp.archiviert) {
+                    appendArchiveEntry({
+                        id: resp.id,
+                        title: resp.titel,
+                        category: resp.kategorie,
+                        archived_at: resp.archiviert_am,
+                        status: resp.status
+                    });
+                } else {
+                    const statusCol = $(`.kanban-column[data-status='${resp.status}']`);
+                    resp.status_label = resp.status_label || resp.status;
+                    addCardBelowHeader(statusCol, buildCardMarkup(resp));
+                }
+
+                $('#aufgabeForm')[0].reset();
+                categorySelect.val('betrieb');
+                toggleTrainingFields('betrieb');
+
+                if (resp.status !== 'offen') {
+                    refreshStundenSummary();
+                }
+            },
+            'Aufgabe konnte nicht gespeichert werden. Serverantwort: '
+        );
+    });
+});
+
+
+/* ==========================================================================
+   KLICK AUF EDIT-BUTTON EINER KARTE
+   --------------------------------------------------------------------------
+   - Merkt sich die Karte (editCardRef)
+   - BefÃ¼llt das Bearbeiten-Modal mit populateEditForm()
+   - öffnet das Modal
+   ========================================================================== */
+$(document).on('click', '.edit-task', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const card = $(this).closest('.kanban-card');
+
+    // Referenz fÃ¼r spÃ¤teres Update merken
+    editCardRef = card;
+
+    // Formular mit Daten der Karte fÃ¼llen
+    populateEditForm(card);
+
+    // Modal anzeigen
+    if (editModal) {
+        editModal.show();
+    }
+});
+
+
+/* ==========================================================================
+   FORMULAR: AUFGABE BEARBEITEN
+   --------------------------------------------------------------------------
+   - Schickt neue Werte an aufgaben_edit.php
+   - Je nach Antwort:
+       - Aufgabe archivieren und ins Archiv verschieben
+       - oder Karte im Board aktualisieren (Status / Text / Stunden)
+       - StundenÃ¼bersicht neu laden
+   ========================================================================== */
+editForm.on('submit', function(e) {
+    e.preventDefault();
+    if (!editCardRef) return;
+
+    const formData = $(this).serialize();
+
+    $.ajax({
+        url: 'aufgaben_edit.php',
+        type: 'POST',
+        dataType: 'json',
+        data: formData
+    }).done(function(resp) {
+
+        if (resp && resp.success) {
+
+            hideModal(editModal, '#editAufgabeModal');
+
+            if (resp.archiviert) {
+                // Karte aus Board entfernen und ins Archiv
+                editCardRef.fadeOut(150, function() { $(this).remove(); });
+
+                appendArchiveEntry({
+                    id: resp.id,
+                    title: resp.titel,
+                    category: resp.kategorie,
+                    archived_at: resp.archiviert_am,
+                    status: resp.status
+                });
+
+            } else {
+                // Nur Daten der Karte aktualisieren und ggf. in andere Spalte verschieben
+                resp.status_label = resp.status_label || resp.status;
+                applyCardUpdates(editCardRef, resp);
+                moveCardToStatus(editCardRef, resp.status);
+            }
+
+            editCardRef = null;
+            refreshStundenSummary();
+
+        } else {
+            const message =
+                resp && resp.msg
+                    ? resp.msg
+                    : 'Aufgabe konnte nicht aktualisiert werden.';
+            alert(message);
+        }
+
+    }).fail(function(xhr) {
+
+        // Fallback ? JSON aus der Fehlerantwort nutzen, falls vorhanden
+        handleAjaxFailWithSuccessFallback(
+            xhr,
+            function(data) {
+
+                hideModal(editModal, '#editAufgabeModal');
+
+                if (data.archiviert) {
+                    editCardRef.fadeOut(150, function() { $(this).remove(); });
+
+                    appendArchiveEntry({
+                        id: data.id,
+                        title: data.titel,
+                        category: data.kategorie,
+                        archived_at: data.archiviert_am,
+                        status: data.status
+                    });
+
+                } else {
+                    const statusLabel = data.status_label || data.status;
+
+                    applyCardUpdates(editCardRef, {
+                        titel: data.titel,
+                        beschreibung: data.beschreibung,
+                        kategorie: data.kategorie,
+                        status: data.status,
+                        status_label: statusLabel,
+                        stunden: data.stunden,
+                        stunden_typ: data.stunden_typ
+                    });
+
+                    moveCardToStatus(editCardRef, data.status);
+                }
+
+                editCardRef = null;
+                refreshStundenSummary();
+            },
+            'Aufgabe konnte nicht aktualisiert werden. Serverantwort: '
+        );
+    });
+});
+
+
+/* ==========================================================================
+   EXPLIZIT ARCHIVIEREN (Archiv-Button auf einer Karte)
+   --------------------------------------------------------------------------
+   - Fragt zur Sicherheit nach (confirm)
+   - Sendet id an archive_aufgabe.php
+   - Entfernt Karte aus Board, setzt neuen Archiv-Eintrag
+   - Aktualisiert Archiv-Leer-Status & StundenÃ¼bersicht
+   ========================================================================== */
+$(document).on('click', '.archive-task', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const card = $(this).closest('.kanban-card');
+    const id   = card.data('id');
+    if (!id) return;
+
+    if (!confirm('Aufgabe archivieren?')) return;
+
+    $.ajax({
+        url: 'archive_aufgabe.php',
+        type: 'POST',
+        dataType: 'json',
+        data: { id }
+    }).done(function(resp) {
+
+        if (resp && resp.success) {
+
+            card.fadeOut(150, function() { $(this).remove(); });
+
+            appendArchiveEntry({
+                id: resp.id,
+                title: resp.titel,
+                category: resp.kategorie,
+                archived_at: resp.archiviert_am,
+                status: resp.status
+            });
+
+            updateArchiveEmptyState();
+            refreshStundenSummary();
+
+        } else {
+            const message =
+                resp && resp.msg
+                    ? resp.msg
+                    : 'Aufgabe konnte nicht archiviert werden.';
+            alert(message);
+        }
+
+    }).fail(function(xhr) {
+
+        handleAjaxFailWithSuccessFallback(
+            xhr,
+            function(data) {
+                card.fadeOut(150, function() { $(this).remove(); });
+
+                appendArchiveEntry({
+                    id: data.id,
+                    title: data.titel,
+                    category: data.kategorie,
+                    archived_at: data.archiviert_am,
+                    status: data.status
+                });
+
+                updateArchiveEmptyState();
+                refreshStundenSummary();
+            },
+            'Aufgabe konnte nicht archiviert werden. Serverantwort: '
+        );
+    });
+});
+
+
+/* ==========================================================================
+   AUFGABE LÃ–SCHEN
+   --------------------------------------------------------------------------
+   - Klick auf MÃ¼lleimer ? confirm()
+   - Sendet id an aufgaben_delete.php
+   - Entfernt Karte bei Erfolg
+   - Aktualisiert StundenÃ¼bersicht
+   ========================================================================== */
+$(document).on('click', '.delete-task', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const card = $(this).closest('.kanban-card');
+
+    if (!confirm('Aufgabe wirklich löschen?')) return;
+
+    $.ajax({
+        url: 'aufgaben_delete.php',
+        type: 'POST',
+        dataType: 'json',
+        data: { id: card.data('id') }
+    }).done(function(resp) {
+
+        if (resp && resp.success) {
+            card.fadeOut(150, function() { $(this).remove(); });
+            refreshStundenSummary();
+
+        } else {
+            const message =
+                resp && resp.msg
+                    ? resp.msg
+                    : 'Aufgabe konnte nicht gelöscht werden.';
+            alert(message);
+        }
+
+    }).fail(function(xhr) {
+
+        handleAjaxFailWithSuccessFallback(
+            xhr,
+            function() {
+                card.fadeOut(150, function() { $(this).remove(); });
+                refreshStundenSummary();
+            },
+            'Aufgabe konnte nicht gelöscht werden. Serverantwort: '
+        );
+    });
+});
+
+
+/* ==========================================================================
+   INITIALER AUFRUF BEIM LADEN DER SEITE
+   --------------------------------------------------------------------------
+   - Holt aktuelle Stunden-Kontingente & bereits verbrauchte Zeiten
+   - Setzt die Anzeige oben (Aktuelle Woche / Betrieb / Schule / Gesamt)
+   ========================================================================== */
+refreshStundenSummary();
+</script>
+
+<?php
+// Finale Ã¼bergabe an das Layout-Template
+$page_content = ob_get_clean();
+include __DIR__ . '/layout.php';
+?>
+
+
+
+
+

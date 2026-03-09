@@ -1,0 +1,176 @@
+/* =====================================================
+   ICON BUTTONS – GLOBAL
+===================================================== */
+
+.icon-btn {
+    width: 32px;
+    height: 32px;
+    padding: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    position: relative;
+
+    transition:
+        background-color 0.2s ease,
+        transform 0.1s ease;
+}
+
+.icon-btn svg {
+    width: 22px;
+    height: 22px;
+}
+
+.icon-btn:active {
+    transform: scale(0.95);
+}
+
+/* =====================================================
+   EDIT
+===================================================== */
+.icon-btn.edit:hover {
+    background-color: rgb(0, 123, 255);
+}
+
+.icon-btn.edit:hover svg path {
+    fill: #fff;
+}
+
+/* =====================================================
+   DELETE
+===================================================== */
+.icon-btn.delete:hover {
+    background-color: rgb(237, 56, 56);
+}
+
+.icon-btn.delete:hover svg path {
+    fill: #fff;
+}
+
+/* =====================================================
+   ARCHIVE
+===================================================== */
+.icon-btn.archive:hover {
+    background-color: rgb(108, 117, 125);
+}
+
+.icon-btn.archive svg.archive-icon path,
+.icon-btn.archive svg.archive-icon polyline,
+.icon-btn.archive svg.archive-icon line {
+    stroke: #6c757d;
+    stroke-width: 2;
+    fill: none;
+}
+
+.icon-btn.archive:hover svg.archive-icon path,
+.icon-btn.archive:hover svg.archive-icon polyline,
+.icon-btn.archive:hover svg.archive-icon line {
+    stroke: white;
+}
+
+
+/* =====================================================
+   RESTORE
+===================================================== */
+.icon-btn.restore:hover {
+    background-color: rgb(25, 135, 84);
+}
+
+.icon-btn.restore:hover svg path,
+.icon-btn.restore:hover svg polyline {
+    stroke: #fff;
+}
+
+/* ===============================================================
+   6.5 GLOBALE TOOLTIP-REGEL (rechts vom Button)
+================================================================ */
+
+.editButton .tooltip,
+.deleteButton .tooltip,
+.archive-task-btn .tooltip,
+.archive-restore-btn .tooltip {
+    position: absolute;
+    left: 42px; /* (32px Button + 10px Abstand) */
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgb(41, 41, 41);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: none;
+    z-index: 20;
+}
+
+.editButton .tooltip::before,
+.deleteButton .tooltip::before,
+.archive-task-btn .tooltip::before,
+.archive-restore-btn .tooltip::before {
+    content: "";
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background-color: rgb(41, 41, 41);
+    left: -4px;
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
+}
+
+.editButton:hover .tooltip,
+.deleteButton:hover .tooltip,
+.archive-task-btn:hover .tooltip,
+.archive-restore-btn:hover .tooltip {
+    opacity: 1;
+    transform: translateY(-50%) translateX(2px);
+}
+
+/* =====================================================
+   ICON BUTTON TOOLTIP – GLOBAL
+===================================================== */
+
+.icon-btn {
+    position: relative;
+}
+
+.icon-btn .tooltip {
+    position: absolute;
+    left: 42px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgb(41, 41, 41);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: none;
+    z-index: 20;
+}
+
+.icon-btn .tooltip::before {
+    content: "";
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background-color: rgb(41, 41, 41);
+    left: -4px;
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
+}
+
+.icon-btn:hover .tooltip {
+    opacity: 1;
+    transform: translateY(-50%) translateX(2px);
+}

@@ -1,0 +1,210 @@
+LastSessions<|||>1<|||>DAN
+LastActiveSession<|||>1<|||>DAN
+SessionManager_WindowWidth<|||>3<|||>957
+SessionManager_WindowHeight<|||>3<|||>590
+SessionManager_WindowLeft<|||>3<|||>271
+SessionManager_WindowTop<|||>3<|||>227
+ColWidths_connform.ListSessions<|||>1<|||>163,50,50,50,50,50,10
+ColsVisible_connform.ListSessions<|||>1<|||>0,1,4,6
+ColPositions_connform.ListSessions<|||>1<|||>0,1,2,3,4,5,6
+ColSort_connform.ListSessions<|||>1<|||>0,0
+SQL Attr Comment Foreground<|||>3<|||>8421504
+SQL Attr Comment Background<|||>3<|||>536870911
+SQL Attr Comment Style<|||>3<|||>2
+SQL Attr ConditionalComment Foreground<|||>3<|||>8421504
+SQL Attr ConditionalComment Background<|||>3<|||>536870911
+SQL Attr ConditionalComment Style<|||>3<|||>2
+SQL Attr ConsoleOutput Foreground<|||>3<|||>536870911
+SQL Attr ConsoleOutput Background<|||>3<|||>536870911
+SQL Attr ConsoleOutput Style<|||>3<|||>5
+SQL Attr DataType Foreground<|||>3<|||>128
+SQL Attr DataType Background<|||>3<|||>536870911
+SQL Attr DataType Style<|||>3<|||>1
+SQL Attr DefaultPackages Foreground<|||>3<|||>536870911
+SQL Attr DefaultPackages Background<|||>3<|||>536870911
+SQL Attr DefaultPackages Style<|||>3<|||>1
+SQL Attr DelimitedIdentifier Foreground<|||>3<|||>32896
+SQL Attr DelimitedIdentifier Background<|||>3<|||>536870911
+SQL Attr DelimitedIdentifier Style<|||>3<|||>0
+SQL Attr Exception Foreground<|||>3<|||>536870911
+SQL Attr Exception Background<|||>3<|||>536870911
+SQL Attr Exception Style<|||>3<|||>2
+SQL Attr Function Foreground<|||>3<|||>8388608
+SQL Attr Function Background<|||>3<|||>536870911
+SQL Attr Function Style<|||>3<|||>1
+SQL Attr Identifier Foreground<|||>3<|||>32896
+SQL Attr Identifier Background<|||>3<|||>536870911
+SQL Attr Identifier Style<|||>3<|||>0
+SQL Attr Key Foreground<|||>3<|||>16711680
+SQL Attr Key Background<|||>3<|||>536870911
+SQL Attr Key Style<|||>3<|||>1
+SQL Attr Number Foreground<|||>3<|||>8388736
+SQL Attr Number Background<|||>3<|||>536870911
+SQL Attr Number Style<|||>3<|||>0
+SQL Attr PLSQL-ReservedWord Foreground<|||>3<|||>536870911
+SQL Attr PLSQL-ReservedWord Background<|||>3<|||>536870911
+SQL Attr PLSQL-ReservedWord Style<|||>3<|||>1
+SQL Attr ProcName Foreground<|||>3<|||>536870911
+SQL Attr ProcName Background<|||>3<|||>536870911
+SQL Attr ProcName Style<|||>3<|||>0
+SQL Attr Space Foreground<|||>3<|||>536870911
+SQL Attr Space Background<|||>3<|||>536870911
+SQL Attr Space Style<|||>3<|||>0
+SQL Attr SQLPlus-Command Foreground<|||>3<|||>536870911
+SQL Attr SQLPlus-Command Background<|||>3<|||>536870911
+SQL Attr SQLPlus-Command Style<|||>3<|||>1
+SQL Attr String Foreground<|||>3<|||>32768
+SQL Attr String Background<|||>3<|||>536870911
+SQL Attr String Style<|||>3<|||>0
+SQL Attr Symbol Foreground<|||>3<|||>16711680
+SQL Attr Symbol Background<|||>3<|||>536870911
+SQL Attr Symbol Style<|||>3<|||>0
+SQL Attr TableName Foreground<|||>3<|||>16711935
+SQL Attr TableName Background<|||>3<|||>536870911
+SQL Attr TableName Style<|||>3<|||>0
+SQL Attr Variable Foreground<|||>3<|||>8388736
+SQL Attr Variable Background<|||>3<|||>536870911
+SQL Attr Variable Style<|||>3<|||>0
+MySQL_Binaries<|||>1<|||>C:\Program Files\MariaDB 12.0\bin
+FieldEditor_Set<|||>3<|||>1
+ColWidths_frmTableEditor.listColumns<|||>1<|||>45,162,156,90,60,65,50,119,130,140,100,100,50,50
+ColsVisible_frmTableEditor.listColumns<|||>1<|||>0,1,2,3,4,5,6,7,8,9,10,11,12,13
+ColPositions_frmTableEditor.listColumns<|||>1<|||>0,1,2,3,4,5,6,7,8,9,10,11,12,13
+ColSort_frmTableEditor.listColumns<|||>1<|||>-1,0
+ColWidths_frmTableEditor.treeIndexes<|||>1<|||>222,100,80,120,80
+ColsVisible_frmTableEditor.treeIndexes<|||>1<|||>0,1,2,3,4
+ColPositions_frmTableEditor.treeIndexes<|||>1<|||>0,1,2,3,4
+ColSort_frmTableEditor.treeIndexes<|||>1<|||>-1,0
+ColWidths_frmTableEditor.listForeignKeys<|||>1<|||>196,80,100,80,80,72
+ColsVisible_frmTableEditor.listForeignKeys<|||>1<|||>0,1,2,3,4,5
+ColPositions_frmTableEditor.listForeignKeys<|||>1<|||>0,1,2,3,4,5
+ColSort_frmTableEditor.listForeignKeys<|||>1<|||>-1,0
+ColWidths_frmTableEditor.listCheckConstraints<|||>1<|||>200,408
+ColsVisible_frmTableEditor.listCheckConstraints<|||>1<|||>0,1
+ColPositions_frmTableEditor.listCheckConstraints<|||>1<|||>0,1
+ColSort_frmTableEditor.listCheckConstraints<|||>1<|||>-1,0
+UpdatecheckLastrun<|||>1<|||>2025-11-12 13:38:17
+CreateDbCollation<|||>1<|||>utf8mb4_uca1400_german2_as_ci
+ColWidths_UserManagerForm.listUsers<|||>1<|||>96,80
+ColsVisible_UserManagerForm.listUsers<|||>1<|||>0,1
+ColPositions_UserManagerForm.listUsers<|||>1<|||>0,1
+ColSort_UserManagerForm.listUsers<|||>1<|||>0,0
+DateTimeEditor_CursorPos_Type4<|||>3<|||>0
+dbtreewidth<|||>3<|||>327
+MainWinLeft<|||>3<|||>163
+MainWinTop<|||>3<|||>229
+MainWinWidth<|||>3<|||>1147
+MainWinHeight<|||>3<|||>684
+ColWidths_MainForm.ListDatabases<|||>1<|||>150,80,50,50,50,50,50,50,50,50,120
+ColsVisible_MainForm.ListDatabases<|||>1<|||>0,1,2,3,4,5,6,7,8,9,10
+ColPositions_MainForm.ListDatabases<|||>1<|||>0,1,2,3,4,5,6,7,8,9,10
+ColSort_MainForm.ListDatabases<|||>1<|||>0,0
+ColWidths_MainForm.ListVariables<|||>1<|||>160,200,316
+ColsVisible_MainForm.ListVariables<|||>1<|||>0,1,2
+ColPositions_MainForm.ListVariables<|||>1<|||>0,1,2
+ColSort_MainForm.ListVariables<|||>1<|||>0,0
+ColWidths_MainForm.ListStatus<|||>1<|||>160,316,100,100
+ColsVisible_MainForm.ListStatus<|||>1<|||>0,1,2,3
+ColPositions_MainForm.ListStatus<|||>1<|||>0,1,2,3
+ColSort_MainForm.ListStatus<|||>1<|||>0,0
+ColWidths_MainForm.ListProcesses<|||>1<|||>70,80,80,80,80,50,50,28
+ColsVisible_MainForm.ListProcesses<|||>1<|||>0,1,2,3,4,5,6,7
+ColPositions_MainForm.ListProcesses<|||>1<|||>0,1,2,3,4,5,6,7
+ColSort_MainForm.ListProcesses<|||>1<|||>0,1
+ColWidths_MainForm.ListCommandStats<|||>1<|||>120,100,100,100,256
+ColsVisible_MainForm.ListCommandStats<|||>1<|||>0,1,2,3,4
+ColPositions_MainForm.ListCommandStats<|||>1<|||>0,1,2,3,4
+ColSort_MainForm.ListCommandStats<|||>1<|||>1,1
+ColWidths_MainForm.ListTables<|||>1<|||>120,70,70,120,120,70,100,50,70,70,70,70,70,90,120,70,70,70,50
+ColsVisible_MainForm.ListTables<|||>1<|||>0,1,2,3,4,5,6,18
+ColPositions_MainForm.ListTables<|||>1<|||>0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18
+ColSort_MainForm.ListTables<|||>1<|||>0,0
+MainWinOnMonitor<|||>3<|||>2
+Servers\DAN\SessionCreated<|||>1<|||>2025-11-12 13:40:55
+Servers\DAN\Host<|||>1<|||>127.0.0.1
+Servers\DAN\WindowsAuth<|||>3<|||>0
+Servers\DAN\CleartextPluginEnabled<|||>3<|||>0
+Servers\DAN\User<|||>1<|||>root
+Servers\DAN\Password<|||>1<|||>4A6D6569353634374
+Servers\DAN\LoginPrompt<|||>3<|||>0
+Servers\DAN\Port<|||>1<|||>3306
+Servers\DAN\NetType<|||>3<|||>0
+Servers\DAN\Compressed<|||>3<|||>0
+Servers\DAN\LocalTimeZone<|||>3<|||>0
+Servers\DAN\QueryTimeout<|||>3<|||>30
+Servers\DAN\KeepAlive<|||>3<|||>20
+Servers\DAN\FullTableStatus<|||>3<|||>1
+Servers\DAN\Databases<|||>1<|||>
+Servers\DAN\Library<|||>1<|||>libmariadb.dll
+Servers\DAN\Comment<|||>1<|||>
+Servers\DAN\StartupScriptFilename<|||>1<|||>
+Servers\DAN\TreeBackground<|||>3<|||>536870911
+Servers\DAN\SSHtunnelActive<|||>3<|||>0
+Servers\DAN\SshExecutable<|||>1<|||>plink.exe
+Servers\DAN\SSHtunnelHost<|||>1<|||>
+Servers\DAN\SSHtunnelHostPort<|||>3<|||>22
+Servers\DAN\SSHtunnelUser<|||>1<|||>
+Servers\DAN\SSHtunnelPassword<|||>1<|||>2
+Servers\DAN\SSHtunnelTimeout<|||>3<|||>4
+Servers\DAN\SSHtunnelPrivateKey<|||>1<|||>
+Servers\DAN\SSHtunnelPort<|||>3<|||>3307
+Servers\DAN\SSL_Active<|||>3<|||>0
+Servers\DAN\SSL_Key<|||>1<|||>
+Servers\DAN\SSL_Cert<|||>1<|||>
+Servers\DAN\SSL_CA<|||>1<|||>
+Servers\DAN\SSL_Cipher<|||>1<|||>
+Servers\DAN\SSL_Verification<|||>3<|||>2
+Servers\DAN\IgnoreDatabasePattern<|||>1<|||>
+Servers\DAN\LogFileDdl<|||>3<|||>0
+Servers\DAN\LogFileDml<|||>3<|||>0
+Servers\DAN\LogFilePath<|||>1<|||>C:\Users\DietrAng\AppData\Roaming\HeidiSQL\Logs\%session\%db\%y%m%d.sql
+Servers\DAN\ServerVersionFull<|||>1<|||>12.0.2-MariaDB - mariadb.org binary distribution
+Servers\DAN\ConnectCount<|||>3<|||>28
+Servers\DAN\ServerVersion<|||>3<|||>120002
+Servers\DAN\LastConnect<|||>1<|||>2026-01-15 07:31:31
+Servers\DAN\lastUsedDB<|||>1<|||>dan
+Servers\DAN\RefusedCount<|||>3<|||>1
+Servers\DAN\dan|aufgaben\MemoEditorHighlighter_kategorie<|||>1<|||>
+Servers\Lokaler Server\SessionCreated<|||>1<|||>2025-11-12 11:28:06
+Servers\Lokaler Server\Host<|||>1<|||>127.0.0.1
+Servers\Lokaler Server\WindowsAuth<|||>3<|||>0
+Servers\Lokaler Server\CleartextPluginEnabled<|||>3<|||>0
+Servers\Lokaler Server\User<|||>1<|||>root
+Servers\Lokaler Server\Password<|||>1<|||>9
+Servers\Lokaler Server\LoginPrompt<|||>3<|||>0
+Servers\Lokaler Server\Port<|||>1<|||>3306
+Servers\Lokaler Server\NetType<|||>3<|||>0
+Servers\Lokaler Server\Compressed<|||>3<|||>0
+Servers\Lokaler Server\LocalTimeZone<|||>3<|||>0
+Servers\Lokaler Server\QueryTimeout<|||>3<|||>30
+Servers\Lokaler Server\KeepAlive<|||>3<|||>20
+Servers\Lokaler Server\FullTableStatus<|||>3<|||>1
+Servers\Lokaler Server\Databases<|||>1<|||>
+Servers\Lokaler Server\Library<|||>1<|||>libmariadb.dll
+Servers\Lokaler Server\Comment<|||>1<|||>
+Servers\Lokaler Server\StartupScriptFilename<|||>1<|||>
+Servers\Lokaler Server\TreeBackground<|||>3<|||>536870911
+Servers\Lokaler Server\SSHtunnelActive<|||>3<|||>0
+Servers\Lokaler Server\SshExecutable<|||>1<|||>
+Servers\Lokaler Server\SSHtunnelHost<|||>1<|||>
+Servers\Lokaler Server\SSHtunnelHostPort<|||>3<|||>22
+Servers\Lokaler Server\SSHtunnelUser<|||>1<|||>
+Servers\Lokaler Server\SSHtunnelPassword<|||>1<|||>1
+Servers\Lokaler Server\SSHtunnelTimeout<|||>3<|||>4
+Servers\Lokaler Server\SSHtunnelPrivateKey<|||>1<|||>
+Servers\Lokaler Server\SSHtunnelPort<|||>3<|||>3307
+Servers\Lokaler Server\SSL_Active<|||>3<|||>0
+Servers\Lokaler Server\SSL_Key<|||>1<|||>
+Servers\Lokaler Server\SSL_Cert<|||>1<|||>
+Servers\Lokaler Server\SSL_CA<|||>1<|||>
+Servers\Lokaler Server\SSL_Cipher<|||>1<|||>
+Servers\Lokaler Server\SSL_Verification<|||>3<|||>2
+Servers\Lokaler Server\IgnoreDatabasePattern<|||>1<|||>
+Servers\Lokaler Server\LogFileDdl<|||>3<|||>0
+Servers\Lokaler Server\LogFileDml<|||>3<|||>0
+Servers\Lokaler Server\LogFilePath<|||>1<|||>C:\Users\DietrAng\AppData\Roaming\HeidiSQL\Logs\%session\%db\%y%m%d.sql
+Servers\Lokaler Server\ServerVersionFull<|||>1<|||>12.0.2-MariaDB - mariadb.org binary distribution
+Servers\Lokaler Server\ConnectCount<|||>3<|||>1
+Servers\Lokaler Server\ServerVersion<|||>3<|||>120002
+Servers\Lokaler Server\LastConnect<|||>1<|||>2025-11-12 11:28:37
+Servers\Lokaler Server\lastUsedDB<|||>1<|||>

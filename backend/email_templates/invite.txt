@@ -1,0 +1,10 @@
+Einladung zur DAN Plattform
+
+Sie wurden eingeladen, sich zu registrieren.
+
+Klasse: {{KLASSE}}
+Jahrgang: {{JAHRGANG}}
+Gültig bis: {{GUELTIG_BIS}}
+
+Registrierungslink:
+{{LINK}}

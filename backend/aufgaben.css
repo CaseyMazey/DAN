@@ -1,0 +1,352 @@
+﻿/* ===============================================================
+   1. GLOBAL ELEMENTS
+================================================================ */
+h1 { 
+    color:#0d6efd; 
+    margin-bottom:30px; 
+}
+
+
+
+/* ===============================================================
+   2. HOURS SUMMARY – Bereich für Stundenübersicht
+================================================================ */
+.hours-summary { 
+    background:#fff; 
+    border-radius:12px; 
+    padding:20px; 
+    box-shadow:0 4px 12px rgba(0,0,0,0.05); 
+}
+
+.hours-summary .stat-label { 
+    font-size:0.75rem; 
+    letter-spacing:0.08em; 
+    text-transform:uppercase; 
+    color:#6c757d; 
+}
+
+.hours-summary .stat-value { 
+    font-size:1.2rem; 
+    font-weight:600; 
+}
+
+.hours-summary .stat-value-small { 
+    font-weight:500; 
+}
+
+.hours-summary hr { 
+    border-color:#e4e7eb; 
+}
+
+.task-hours { 
+    color:#0d6efd; 
+}
+
+.training-fields { 
+    border:1px dashed #cfe2ff; 
+    border-radius:10px; 
+    padding:12px; 
+    background:#f8fbff; 
+}
+
+
+
+/* ===============================================================
+   3. KANBAN BOARD – gesamte Struktur
+================================================================ */
+.kanban-board { 
+    display:flex; 
+    gap:15px; 
+    flex-wrap:wrap; 
+}
+
+
+
+/* ===============================================================
+   4. KANBAN SPALTEN
+================================================================ */
+.kanban-column { 
+    border-radius:10px; 
+    padding:15px; 
+    flex:1; 
+    min-width:280px; 
+    transition: all 0.3s ease; 
+}
+
+.kanban-column[data-status="offen"]           { background:#eaecef; }
+.kanban-column[data-status="in_bearbeitung"] { background:#fff7d6; }
+.kanban-column[data-status="fertig"]         { background:#d9f5dd; }
+
+.kanban-column h4 { 
+    text-align:center; 
+    margin-bottom:15px; 
+}
+
+
+
+/* ===============================================================
+   5. KANBAN CARDS – Aufgaben-Karten
+================================================================ */
+.kanban-card { 
+    background:#ffffff; 
+    padding:10px 12px; 
+    margin-bottom:10px; 
+    border-radius:8px; 
+    cursor:grab; 
+    box-shadow:0 2px 4px rgba(0,0,0,0.1); 
+    transition: transform 0.3s, box-shadow 0.3s; 
+    display:grid !important;
+    grid-template-columns: 1fr auto;
+    gap:10px;
+    align-items:start;
+}
+
+.kanban-card:hover { 
+    transform: translateY(-3px); 
+    box-shadow:0 4px 8px rgba(0,0,0,0.15); 
+}
+
+.kanban-card.dragging { 
+    opacity:0.5; 
+    transform:scale(1.05); 
+}
+
+.task-left {
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    min-width:0;
+}
+
+.kanban-card .task-title { 
+    font-weight:700; 
+    line-height:1.2; 
+    word-break:break-word; 
+}
+
+.kanban-card p { margin:6px 0; }
+.kanban-card small { display:block; margin-top:2px; }
+
+.badge-status { 
+    display:none !important; 
+}
+
+.task-right,
+.task-actions { 
+    display:flex; 
+    flex-direction: column;
+    justify-content:flex-start; 
+    align-items:flex-end; 
+    gap:14px; 
+}
+
+
+
+/* ===============================================================
+   6. KANBAN BUTTONS (Größe, Edit, Archiv, Delete)
+================================================================ */
+
+/* ---------- 6.1 Globale Button-Größe ---------- */
+.task-actions .editButton,
+.task-actions .deleteButton,
+.task-actions .archive-task-btn {
+  width: 32px !important;
+  height: 32px !important;
+  padding: 4px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.task-actions .editButton svg,
+.task-actions .deleteButton svg,
+.task-actions .archive-task-btn svg {
+  width: 22px !important;
+  height: 22px !important;
+}
+
+/* ---------- 6.2 EDIT BUTTON ---------- */
+.editButton {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  transition: 0.2s;
+  position: relative;
+}
+
+.editButton svg { width: 70%; }
+
+.editButton:hover { 
+    background-color: rgb(0, 123, 255); 
+}
+
+.editButton:hover .pencil path { fill:#fff; }
+
+.editButton:active { transform: scale(0.98); }
+
+
+
+/* ---------- 6.3 ARCHIVIEREN BUTTON (TASK) ---------- */
+.archive-task-btn {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  transition: 0.2s;
+  position: relative;
+}
+
+.archive-task-btn svg.archive-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.archive-task-btn svg.archive-icon path,
+.archive-task-btn svg.archive-icon polyline,
+.archive-task-btn svg.archive-icon line {
+  stroke:#6c757d;
+  stroke-width:2;
+  fill:none;
+}
+
+.archive-task-btn:hover { background-color:#6c757d; }
+
+.archive-task-btn:hover svg.archive-icon path,
+.archive-task-btn:hover svg.archive-icon polyline,
+.archive-task-btn:hover svg.archive-icon line {
+  stroke:white;
+}
+
+.archive-task-btn:active { transform:scale(0.95); }
+
+
+
+/* ---------- 6.4 DELETE BUTTON ---------- */
+.deleteButton {
+  background-color: transparent;
+  border: none;
+  cursor:pointer;
+  transition:0.2s;
+  position:relative;
+}
+
+.deleteButton svg { width:70%; }
+
+.deleteButton:hover { background-color:rgb(237,56,56); }
+
+.deleteButton:hover .bin path { fill:white; }
+
+.deleteButton:active { transform:scale(0.98); }
+
+
+
+
+
+/* ===============================================================
+   6.5 GLOBALE TOOLTIP-REGEL (rechts vom Button)
+================================================================ */
+
+.editButton .tooltip,
+.deleteButton .tooltip,
+.archive-task-btn .tooltip,
+.archive-restore-btn .tooltip {
+    position: absolute;
+    left: 42px; /* (32px Button + 10px Abstand) */
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgb(41, 41, 41);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: none;
+    z-index: 20;
+}
+
+.editButton .tooltip::before,
+.deleteButton .tooltip::before,
+.archive-task-btn .tooltip::before,
+.archive-restore-btn .tooltip::before {
+    content: "";
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background-color: rgb(41, 41, 41);
+    left: -4px;
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
+}
+
+.editButton:hover .tooltip,
+.deleteButton:hover .tooltip,
+.archive-task-btn:hover .tooltip,
+.archive-restore-btn:hover .tooltip {
+    opacity: 1;
+    transform: translateY(-50%) translateX(2px);
+}
+
+
+
+/* ===============================================================
+   7. ARCHIV – Bereich für archivierte Aufgaben
+================================================================ */
+.archive-card { 
+    background:#fff; 
+    border-radius:12px; 
+    padding:20px; 
+    box-shadow:0 4px 12px rgba(0,0,0,0.05); 
+}
+
+.archive-entry {
+    border-bottom:1px solid #e9ecef;
+    padding:10px 0;
+}
+
+.archive-entry:last-child { border-bottom:none; }
+
+.archive-entry .meta {
+    font-size:0.85rem;
+    color:#6c757d;
+}
+
+.archive-actions {
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+
+
+
+/* ===============================================================
+   8. ARCHIV BUTTON – Restore
+================================================================ */
+
+.archive-restore-btn {
+  background-color: transparent;
+  border:none;
+  cursor:pointer;
+  transition:0.2s;
+  position:relative;
+  border-radius:8px;
+}
+
+.archive-restore-btn .restore-icon {
+  width:22px;
+  height:22px;
+}
+
+.archive-restore-btn .restore-icon path,
+.archive-restore-btn .restore-icon polyline {
+  stroke:#6c757d;
+}
+
+.archive-restore-btn:hover { background-color:rgb(25,135,84); }
+
+.archive-restore-btn:hover .restore-icon path,
+.archive-restore-btn:hover .restore-icon polyline {
+  stroke:white;
+}

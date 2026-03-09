@@ -1,0 +1,281 @@
+/* ===================================================================
+   PAGE: ACCOUNT
+   Spezifische Styles nur fǬr account.php
+   =================================================================== */
+
+/* ---------------------------------------------------------------
+   1. PROFILKARTE
+   --------------------------------------------------------------- */
+
+.main {
+    --border-color: black;
+}
+
+
+/* Wrapper zum Positionieren des Darkmode-Toggles */
+.pass-card-wrapper {
+    position: relative;
+}
+
+/* Deine bestehende Profilkarte */
+.pass-card {
+    background: var(--card-bg);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: var(--shadow-light);
+    max-width: 600px;
+    margin: 0 auto;
+    position: relative; /* wichtig fǬr absolute Toggle-Position */
+}
+
+/* Name */
+.pass-card h2 {
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+/* Textlinien */
+.pass-card p {
+    margin-bottom: 0.4rem;
+}
+
+/* Buttons */
+.pass-btn {
+    margin-right: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+/* ---------------------------------------------------------------
+   DARKMODE SWITCH im Header der Profilkarte
+   --------------------------------------------------------------- */
+
+.profile-darkmode-toggle {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+
+    /* Verkleinern */
+    transform: scale(0.75);
+    transform-origin: top right;
+
+    z-index: 20; /* damit er Ǭber allem steht */
+}
+
+/* Mobile noch etwas kleiner */
+@media (max-width: 600px) {
+    .profile-darkmode-toggle {
+        top: 10px;
+        right: 10px;
+        transform: scale(0.65);
+    }
+}
+
+/* ==== ORIGINALER SWITCH (unver��ndert, nur ausgelagert) ==== */
+
+.toggle-switch {
+  position: relative;
+  width: 100px;
+  height: 50px;
+  --light: #d8dbe0;
+  --dark: #28292c;
+  --link: rgb(27, 129, 112);
+  --link-hover: rgb(24, 94, 82);
+}
+
+.switch-label {
+  position: absolute;
+  width: 100%;
+  height: 50px;
+  background-color: var(--dark);
+  border-radius: 25px;
+  cursor: pointer;
+  border: 3px solid var(--dark);
+}
+
+.checkbox {
+  position: absolute;
+  display: none;
+}
+
+.slider {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 25px;
+  transition: 0.3s;
+}
+
+.checkbox:checked ~ .slider {
+  background-color: var(--light);
+}
+
+.slider::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  box-shadow: inset 12px -4px 0px 0px var(--light);
+  background-color: var(--dark);
+  transition: 0.3s;
+}
+
+.checkbox:checked ~ .slider::before {
+  transform: translateX(50px);
+  background-color: var(--dark);
+  box-shadow: none;
+}
+
+/* ---------------------------------------------------------------
+   2. SIGNATUR-VORSCHAU
+   --------------------------------------------------------------- */
+
+#profileSignatureCanvas {
+    display: block;
+    width: 100%;
+    max-width: 360px;
+    background: var(--card-bg);
+    border: 1px solid;
+    border-radius: 6px;
+    cursor: crosshair;
+    border-color: black;
+}
+
+#profileCanvasWrap {
+    max-width: 380px;
+ 
+}
+
+.signature-preview {
+    display: block;
+    max-width: 240px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 4px;
+}
+
+
+/* ---------------------------------------------------------------
+   3. SIGNATUR-UPLOAD / ZEICHNEN-BLOCK
+   --------------------------------------------------------------- */
+
+.signature-box {
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--border-color, #dee2e6);
+    border-radius: 12px;
+    padding: 1rem;
+}
+
+
+.signature-box h6 {
+    font-weight: 600;
+    margin-bottom: 0.7rem;
+}
+
+/* ---------------------------------------------------------------
+   3b. PROFIL- & PASSWORT-KARTEN ANGLEICHEN
+   --------------------------------------------------------------- */
+
+.pass-card {
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--border-color, #dee2e6);
+}
+
+
+/* ---------------------------------------------------------------
+   4. RADIO-AUSWAHL SIGNATUR TYP
+   --------------------------------------------------------------- */
+
+.signature-choice .form-check-label {
+    font-size: 0.9rem;
+}
+
+
+/* ---------------------------------------------------------------
+   5. MODALS (nur kleine Optimierungen)
+   --------------------------------------------------------------- */
+
+.modal-content {
+    background-color: #fff !important;
+    color: #111 !important;
+    backdrop-filter: none !important;
+    box-shadow: 0 0 30px rgba(0,0,0,0.3) !important;
+}
+
+.modal-header,
+.modal-footer {
+    border-color: var(--border-color);
+}
+
+.modal-title {
+    font-weight: 600;
+}
+
+
+/* ---------------------------------------------------------------
+   6. DARKMODE FIXES
+   --------------------------------------------------------------- */
+
+html[data-theme="dark"] #profileSignatureCanvas {
+    background: #111;
+}
+
+html[data-theme="dark"] .signature-preview img {
+    background: #111;
+}
+
+html[data-theme="dark"] .signature-box {
+    background: #111;
+}
+
+
+/* ---------------------------------------------------------------
+   7. SMALL UTILITIES (nur hier relevant)
+   --------------------------------------------------------------- */
+
+.mt-3half {
+    margin-top: 1.35rem;
+}
+
+/* FINAL FIX �?" Modal wirklich deckend machen */
+.modal,
+.modal-dialog,
+.modal-content {
+    background: none !important; /* Entfernt eventuelle transparente Layer */
+}
+
+
+
+html[data-theme="dark"] .modal-content {
+    background-color: #1e1e1e !important;
+    color: #f0f0f0 !important;
+}
+
+
+/* HARD FIX �?" Modal wirklich deckend machen */
+body .modal.show {
+    background-color: rgba(0,0,0,0.6) !important;
+}
+
+body .modal-backdrop.show {
+    opacity: 1 !important;
+    background-color: rgba(0,0,0,0.6) !important;
+}
+
+/* Modal-Box selbst */
+body .modal.show .modal-dialog .modal-content {
+    background: #fff !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border-color) !important;
+    backdrop-filter: none !important;
+}
+
+/* Darkmode */
+html[data-theme="dark"] body .modal.show .modal-dialog .modal-content {
+    background: #1a1a1a !important;
+    color: var(--text) !important;
+}
+

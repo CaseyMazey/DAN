@@ -1,0 +1,257 @@
+/* ===================================================================
+   DAN BASE STYLESHEET
+   Globale Farben, Variablen, Layout-Grundstruktur, Buttons, Cards,
+   Typografie, Utilities — light & dark mode fähig.
+   =================================================================== */
+
+
+/* ---------------------------------------------------------------
+   1. CSS VARIABLEN — LIGHT MODE (default)
+   --------------------------------------------------------------- */
+:root {
+    /* Hintergrund & Text */
+    --bg: #f4f6f8;
+    --text: #333;
+
+    /* Cards, Module, Navbar */
+    --card-bg: #ffffff;
+    --navbar-bg: rgba(255,255,255,0.95);
+    --subheader-bg: rgba(255,255,255,0.85);
+
+    /* Rahmen & Linien */
+    --border-color: #e3e8ef;
+
+    /* Branding Farben */
+    --primary: #0d6efd;
+    --primary-hover: #0056b3;
+    --accent: #00aaff;
+
+    /* Statusfarben (Kanban) */
+    --kanban-offen: #eaecef;
+    --kanban-work: #fff7d6;
+    --kanban-done: #d9f5dd;
+
+    /* Schatten */
+    --shadow-light: 0 6px 18px rgba(0,0,0,0.06);
+    --shadow-nav: 0 8px 20px rgba(0,0,0,0.08);
+}
+
+
+/* ---------------------------------------------------------------
+   2. DARK MODE OVERRIDES
+   --------------------------------------------------------------- */
+html[data-theme="dark"] {
+    --bg: #0f0f0f;
+    --text: #e8e8e8;
+
+    --card-bg: #1a1a1a;
+    --navbar-bg: rgba(35,35,35,0.95);
+    --subheader-bg: rgba(30,30,30,0.85);
+
+    --border-color: #2a2a2a;
+
+    --primary: #66a8ff;
+    --primary-hover: #3f83ff;
+    --accent: #4ccbf7;
+
+    --kanban-offen: #3a3a3a;
+    --kanban-work: #4a4320;
+    --kanban-done: #1e3d28;
+
+    --shadow-light: 0 6px 18px rgba(0,0,0,0.45);
+    --shadow-nav: 0 10px 25px rgba(0,0,0,0.55);
+}
+
+
+/* ---------------------------------------------------------------
+   3. GLOBAL RESET
+   --------------------------------------------------------------- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding-top: 96px; /* Platz für Navbar */
+}
+
+
+/* ---------------------------------------------------------------
+   4. GLOBAL FONTS & HEADERS
+   --------------------------------------------------------------- */
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    color: var(--primary);
+}
+
+h1 {
+    margin-bottom: 30px;
+}
+
+
+
+/* ---------------------------------------------------------------
+   5. GLOBAL ELEMENTE / CARDS / MODULE
+   --------------------------------------------------------------- */
+
+.card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: var(--shadow-light);
+    padding: 1.5rem;
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.box {
+    background: var(--card-bg);
+    padding: 1rem;
+    border-radius: 10px;
+}
+
+
+/* ---------------------------------------------------------------
+   6. NAVBAR & SUBHEADER
+   (Diese sind in layout.php eingebunden, nutzen aber Variablen)
+   --------------------------------------------------------------- */
+
+nav {
+    background: var(--navbar-bg);
+    box-shadow: var(--shadow-nav);
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.subheader {
+    background: var(--subheader-bg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+
+
+/* ---------------------------------------------------------------
+   7. BUTTONS (generische Styles)
+   --------------------------------------------------------------- */
+.btn-primary {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+.btn-primary:hover {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+.btn-outline-primary {
+    color: var(--primary);
+    border-color: var(--primary);
+}
+.btn-outline-primary:hover {
+    background: var(--primary);
+    color: #fff;
+}
+
+
+/* ---------------------------------------------------------------
+   8. INPUTS / FORM
+   --------------------------------------------------------------- */
+input, select, textarea {
+    background: var(--card-bg);
+    color: var(--text);
+    border: 1px solid var(--border-color);
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.1rem rgba(13,110,253,0.25);
+    outline: none;
+}
+
+
+
+/* ---------------------------------------------------------------
+   9. KANBAN — generische Basisfarben über Variablen
+   --------------------------------------------------------------- */
+
+.kanban-column {
+    border-radius: 10px;
+    padding: 15px;
+    flex: 1;
+    min-width: 280px;
+}
+
+.kanban-column[data-status="offen"] {
+    background: var(--kanban-offen);
+}
+.kanban-column[data-status="in_bearbeitung"] {
+    background: var(--kanban-work);
+}
+.kanban-column[data-status="fertig"] {
+    background: var(--kanban-done);
+}
+
+.kanban-card {
+    background: var(--card-bg);
+    box-shadow: var(--shadow-light);
+    border-radius: 8px;
+    padding: 10px 12px;
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+
+
+/* ---------------------------------------------------------------
+   10. HOURS SUMMARY (global nutzbare Komponenten)
+   --------------------------------------------------------------- */
+.hours-summary {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: var(--shadow-light);
+}
+
+.hours-summary hr {
+    border-color: var(--border-color);
+}
+
+.hours-summary .stat-label {
+    color: #6c757d;
+}
+
+html[data-theme="dark"] .hours-summary .stat-label {
+    color: #b5b5b5;
+}
+
+
+
+/* ---------------------------------------------------------------
+   11. TOOLTIP (global)
+   --------------------------------------------------------------- */
+
+.tooltip {
+    background: rgb(41,41,41);
+    color: #fff;
+}
+
+
+
+/* ---------------------------------------------------------------
+   12. UTILITIES
+   --------------------------------------------------------------- */
+.text-muted {
+    color: #6c6c6c;
+}
+html[data-theme="dark"] .text-muted {
+    color: #9a9a9a;
+}
+
+.shadow-sm {
+    box-shadow: var(--shadow-light);
+}
+
+.rounded {
+    border-radius: 12px;
+}
