@@ -91,6 +91,9 @@
                     <x-responsive-nav-link :href="route('wochenbericht.index')" :active="request()->routeIs('wochenbericht.*')">
                         Wochenberichte
                     </x-responsive-nav-link>
+                    <x-nav-link :href="route('aufgaben.index')" :active="request()->routeIs('aufgaben.*')">
+                        Aufgaben
+                    </x-nav-link>
                 @endif
             @endauth
         </div>
