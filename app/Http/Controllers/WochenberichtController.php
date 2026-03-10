@@ -13,7 +13,15 @@ class WochenberichtController extends Controller
     // Übersicht aller Berichte des Azubis
     public function index()
     {
-        $berichte = Wochenbericht::where('azubi_id', auth()->id())
+        $user = auth()->user();
+
+        // Lücken-Scan automatisch ausführen
+        if ($user->ausbildungsbeginn) {
+            $scanner = new \App\Services\LueckenscanService();
+            $scanner->scan($user);
+        }
+
+        $berichte = Wochenbericht::where('azubi_id', $user->id)
             ->orderBy('startdatum', 'desc')
             ->paginate(10);
 
