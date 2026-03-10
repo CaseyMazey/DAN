@@ -48,6 +48,9 @@
             @csrf @method('PATCH')
             <button class="text-xs text-gray-400 hover:text-gray-600">Archivieren</button>
         </form>
+        
+        <button onclick="bearbeitenModal({{ $aufgabe->id }}, '{{ addslashes($aufgabe->titel) }}', '{{ addslashes($aufgabe->beschreibung) }}', '{{ $aufgabe->kategorie }}', '{{ $aufgabe->stunden }}', '{{ $aufgabe->stunden_abziehen_bei }}')"
+          class="text-xs text-blue-400 hover:text-blue-600">Bearbeiten</button>
 
         <form method="POST" action="{{ route('aufgaben.destroy', $aufgabe->id) }}"
             onsubmit="return confirm('Aufgabe wirklich löschen?')">

@@ -6,6 +6,7 @@ use App\Models\Aufgabe;
 use App\Models\StundenConfig;
 use App\Models\WochenberichtEintrag;
 use App\Models\Wochenbericht;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -20,6 +21,11 @@ class AufgabeController extends Controller
             ['max_stunden' => 42, 'betrieb_stunden' => 32, 'berufsschule_stunden' => 10]
         );
 
+        // Montags-Check: Fertige Aufgaben der Vorwoche archivieren
+        if (Carbon::now()->isMonday()) {
+            $this->wochenabschluss($user);
+        }
+
         $aufgaben = Aufgabe::where('azubi_id', $user->id)
             ->where('archiviert', false)
             ->get()
@@ -31,14 +37,12 @@ class AufgabeController extends Controller
             ->limit(20)
             ->get();
 
-        // Gesamtstunden diese Woche berechnen
-        $startDerWoche = Carbon::now()->startOfWeek()->toDateString();
-        $bericht = Wochenbericht::where('azubi_id', $user->id)
-            ->where('startdatum', $startDerWoche)
-            ->first();
-
-        $stundenDieseWoche = $bericht ? $bericht->gesamtstunden() : 0;
-        $ueberschritten = $stundenDieseWoche > $config->max_stunden;
+        // Gesamtstunden aus Aufgaben (In Bearbeitung + Fertig, nicht Geplant)
+        $stundenDieseWoche = Aufgabe::where('azubi_id', $user->id)
+            ->where('archiviert', false)
+            ->whereIn('status', ['in_bearbeitung', 'fertig'])
+            ->sum('stunden');
+                $ueberschritten = $stundenDieseWoche > $config->max_stunden;
 
         return view('aufgaben.index', compact(
             'aufgaben', 'archiviert', 'config', 'stundenDieseWoche', 'ueberschritten'
@@ -105,11 +109,6 @@ class AufgabeController extends Controller
 
         $aufgabe->update(['status' => $request->status]);
 
-        // Wenn fertig → in Wochenbericht übernehmen und archivieren
-        if ($request->status === 'fertig') {
-            $this->inWochenberichtUebernehmen($aufgabe);
-        }
-
         return back()->with('success', 'Status geändert.');
     }
 
@@ -157,40 +156,43 @@ class AufgabeController extends Controller
         return back()->with('success', 'Stunden-Konfiguration gespeichert.');
     }
 
-    private function inWochenberichtUebernehmen(Aufgabe $aufgabe)
+    private function wochenabschluss(User $user)
     {
-        if ($aufgabe->in_wochenbericht) return;
+        $vorwocheStart = Carbon::now()->subWeek()->startOfWeek()->toDateString();
+        $vorwocheEnde  = Carbon::now()->subWeek()->endOfWeek()->subDays(2)->toDateString();
 
-        $start = Carbon::now()->startOfWeek()->toDateString();
-        $end   = Carbon::now()->endOfWeek()->subDays(2)->toDateString();
+        $fertigeAufgaben = Aufgabe::where('azubi_id', $user->id)
+            ->where('status', 'fertig')
+            ->where('archiviert', false)
+            ->where('updated_at', '<=', Carbon::now()->startOfWeek())
+            ->get();
+
+        if ($fertigeAufgaben->isEmpty()) return;
 
         $bericht = Wochenbericht::firstOrCreate(
-            ['azubi_id' => $aufgabe->azubi_id, 'startdatum' => $start],
-            ['enddatum' => $end]
+            ['azubi_id' => $user->id, 'startdatum' => $vorwocheStart],
+            ['enddatum' => $vorwocheEnde]
         );
 
-        // Kategorie bestimmen
-        $kategorie = $aufgabe->kategorie;
-        if ($aufgabe->kategorie === 'unterweisung') {
-            $kategorie = $aufgabe->stunden_abziehen_bei ?? 'betrieb';
+        foreach ($fertigeAufgaben as $aufgabe) {
+            if (!$aufgabe->in_wochenbericht) {
+                $kategorie = $aufgabe->kategorie === 'unterweisung'
+                    ? 'unterweisung'
+                    : $aufgabe->kategorie;
+
+                WochenberichtEintrag::create([
+                    'wochenbericht_id' => $bericht->id,
+                    'kategorie'        => $kategorie,
+                    'beschreibung'     => $aufgabe->titel . ($aufgabe->beschreibung ? ': ' . $aufgabe->beschreibung : ''),
+                    'stunden'          => $aufgabe->stunden,
+                ]);
+            }
+
+            $aufgabe->update([
+                'in_wochenbericht' => true,
+                'archiviert'       => true,
+                'archiviert_am'    => now(),
+            ]);
         }
-
-        // Unterweisung bekommt eigene Kategorie
-        if ($aufgabe->kategorie === 'unterweisung') {
-            $kategorie = 'unterweisung';
-        }
-
-        WochenberichtEintrag::create([
-            'wochenbericht_id' => $bericht->id,
-            'kategorie'        => $kategorie,
-            'beschreibung'     => $aufgabe->titel . ($aufgabe->beschreibung ? ': ' . $aufgabe->beschreibung : ''),
-            'stunden'          => $aufgabe->stunden,
-        ]);
-
-        $aufgabe->update([
-            'in_wochenbericht' => true,
-            'archiviert'       => true,
-            'archiviert_am'    => now(),
-        ]);
     }
 }

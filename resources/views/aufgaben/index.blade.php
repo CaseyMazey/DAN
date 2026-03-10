@@ -49,7 +49,7 @@
             </div>
 
             {{-- Kanban Board --}}
-            <div class="grid grid-cols-3 gap-4">
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
 
                 {{-- Geplant --}}
                 <div class="bg-white shadow rounded-lg p-4">
@@ -189,5 +189,66 @@
             </form>
         </div>
     </div>
+{{-- Modal: Aufgabe bearbeiten --}}
+<div id="modal-bearbeiten" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 w-full max-w-md">
+        <h3 class="font-semibold text-lg mb-4">Aufgabe bearbeiten</h3>
+        <form method="POST" id="form-bearbeiten" class="space-y-4">
+            @csrf @method('PATCH')
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Titel</label>
+                <input type="text" name="titel" id="edit-titel" class="border rounded px-3 py-2 w-full text-sm" required>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Beschreibung</label>
+                <textarea name="beschreibung" id="edit-beschreibung" rows="3" class="border rounded px-3 py-2 w-full text-sm"></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Kategorie</label>
+                <select name="kategorie" id="edit-kategorie" class="border rounded px-3 py-2 w-full text-sm"
+                    onchange="document.getElementById('edit-unterweisung-extra').classList.toggle('hidden', this.value !== 'unterweisung')">
+                    <option value="betrieb">Betrieb</option>
+                    <option value="berufsschule">Berufsschule</option>
+                    <option value="unterweisung">Unterweisung / Schulung</option>
+                </select>
+            </div>
+            <div id="edit-unterweisung-extra" class="hidden">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Stunden abziehen bei</label>
+                <select name="stunden_abziehen_bei" id="edit-stunden-abziehen" class="border rounded px-3 py-2 w-full text-sm">
+                    <option value="betrieb">Betrieb</option>
+                    <option value="berufsschule">Berufsschule</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Stunden</label>
+                <input type="number" name="stunden" id="edit-stunden" step="0.5" min="0.5" max="99"
+                    class="border rounded px-3 py-2 w-full text-sm" required>
+            </div>
+            <div class="flex justify-end gap-2">
+                <button type="button" onclick="document.getElementById('modal-bearbeiten').classList.add('hidden')"
+                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded text-sm">Abbrechen</button>
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded text-sm">Speichern</button>
+            </div>
+        </form>
+    </div>
+</div>
 
+<script>
+function bearbeitenModal(id, titel, beschreibung, kategorie, stunden, stundenAbziehen) {
+    document.getElementById('edit-titel').value = titel;
+    document.getElementById('edit-beschreibung').value = beschreibung;
+    document.getElementById('edit-kategorie').value = kategorie;
+    document.getElementById('edit-stunden').value = stunden;
+    document.getElementById('form-bearbeiten').action = '/aufgaben/' + id;
+
+    if (kategorie === 'unterweisung') {
+        document.getElementById('edit-unterweisung-extra').classList.remove('hidden');
+        document.getElementById('edit-stunden-abziehen').value = stundenAbziehen;
+    } else {
+        document.getElementById('edit-unterweisung-extra').classList.add('hidden');
+    }
+
+    document.getElementById('modal-bearbeiten').classList.remove('hidden');
+}
+</script>
 </x-app-layout>
