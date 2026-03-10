@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\WochenberichtController;
 use App\Http\Controllers\AufgabeController;
+use App\Http\Controllers\KalenderController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -24,6 +25,14 @@ Route::middleware(['auth', 'rolle:azubi'])->group(function () {
     Route::post('/wochenbericht/{id}/speichern', [WochenberichtController::class, 'speichern'])->name('wochenbericht.speichern');
     Route::post('/wochenbericht/{id}/abgeben', [WochenberichtController::class, 'abgeben'])->name('wochenbericht.abgeben');
     Route::post('/wochenbericht/{id}/signieren', [WochenberichtController::class, 'azubiSignieren'])->name('wochenbericht.signieren');
+
+    // Kalender
+    Route::post('/kalender/fach', [KalenderController::class, 'fachErstellen'])->name('kalender.fach.store');
+    Route::delete('/kalender/fach/{id}', [KalenderController::class, 'fachLoeschen'])->name('kalender.fach.destroy');
+    Route::get('/kalender', [KalenderController::class, 'index'])->name('kalender.index');
+    Route::post('/kalender', [KalenderController::class, 'store'])->name('kalender.store');
+    Route::patch('/kalender/{id}', [KalenderController::class, 'update'])->name('kalender.update');
+    Route::delete('/kalender/{id}', [KalenderController::class, 'destroy'])->name('kalender.destroy');
 
     // Aufgaben
     Route::get('/aufgaben', [AufgabeController::class, 'index'])->name('aufgaben.index');
