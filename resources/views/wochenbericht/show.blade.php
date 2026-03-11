@@ -125,6 +125,14 @@
                 <span class="text-sm text-gray-500">Gesamtstunden diese Woche:</span>
                 <span class="ml-2 font-semibold text-lg">{{ $bericht->gesamtstunden() }} Std</span>
             </div>
+            
+            {{-- PDF Export --}}
+            <div class="bg-white shadow rounded-lg p-4 flex justify-end">
+                <a href="{{ route('wochenbericht.pdf', $bericht->id) }}"
+                class="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50">
+                    📄 PDF exportieren
+                </a>
+            </div>
 
             {{-- Kommentare vom Ausbilder --}}
             @if($kommentare->count())

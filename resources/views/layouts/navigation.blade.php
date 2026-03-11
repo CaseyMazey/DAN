@@ -20,6 +20,12 @@
                             <x-nav-link :href="route('wochenbericht.index')" :active="request()->routeIs('wochenbericht.*')">
                                 Wochenberichte
                             </x-nav-link>
+                            <x-nav-link :href="route('aufgaben.index')" :active="request()->routeIs('aufgaben.*')">
+                                Aufgaben
+                            </x-nav-link>
+                            <x-nav-link :href="route('kalender.index')" :active="request()->routeIs('kalender.*')">
+                                Kalender
+                            </x-nav-link>
                         @endif
 
                         @if(auth()->user()->rolle === 'ausbilder')
@@ -87,13 +93,22 @@
             </x-responsive-nav-link>
 
             @auth
-                @if(in_array(auth()->user()->rolle, ['azubi', 'ausbilder']))
+                @if(auth()->user()->rolle === 'azubi')
                     <x-responsive-nav-link :href="route('wochenbericht.index')" :active="request()->routeIs('wochenbericht.*')">
                         Wochenberichte
                     </x-responsive-nav-link>
-                    <x-nav-link :href="route('aufgaben.index')" :active="request()->routeIs('aufgaben.*')">
+                    <x-responsive-nav-link :href="route('aufgaben.index')" :active="request()->routeIs('aufgaben.*')">
                         Aufgaben
-                    </x-nav-link>
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('kalender.index')" :active="request()->routeIs('kalender.*')">
+                        Kalender
+                    </x-responsive-nav-link>
+                @endif
+
+                @if(auth()->user()->rolle === 'ausbilder')
+                    <x-responsive-nav-link :href="route('wochenbericht.index')" :active="request()->routeIs('wochenbericht.*')">
+                        Wochenberichte
+                    </x-responsive-nav-link>
                 @endif
             @endauth
         </div>

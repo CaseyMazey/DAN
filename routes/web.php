@@ -25,6 +25,9 @@ Route::middleware(['auth', 'rolle:azubi'])->group(function () {
     Route::post('/wochenbericht/{id}/speichern', [WochenberichtController::class, 'speichern'])->name('wochenbericht.speichern');
     Route::post('/wochenbericht/{id}/abgeben', [WochenberichtController::class, 'abgeben'])->name('wochenbericht.abgeben');
     Route::post('/wochenbericht/{id}/signieren', [WochenberichtController::class, 'azubiSignieren'])->name('wochenbericht.signieren');
+    Route::get('/wochenbericht/{id}/pdf', [WochenberichtController::class, 'pdfExport'])->name('wochenbericht.pdf');
+    Route::post('/wochenbericht/fehlend-erstellen', [WochenberichtController::class, 'fehlendErstellen'])->name('wochenbericht.fehlend');
+    Route::post('/wochenbericht/sammel-pdf', [WochenberichtController::class, 'sammelPdf'])->name('wochenbericht.sammel');
 
     // Kalender
     Route::post('/kalender/fach', [KalenderController::class, 'fachErstellen'])->name('kalender.fach.store');

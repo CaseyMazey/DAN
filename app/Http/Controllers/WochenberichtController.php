@@ -7,28 +7,53 @@ use App\Models\WochenberichtEintrag;
 use App\Models\WochenberichtBearbeitung;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class WochenberichtController extends Controller
 {
-    // Übersicht aller Berichte des Azubis
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
 
-        // Lücken-Scan automatisch ausführen
         if ($user->ausbildungsbeginn) {
             $scanner = new \App\Services\LueckenscanService();
             $scanner->scan($user);
         }
 
-        $berichte = Wochenbericht::where('azubi_id', $user->id)
-            ->orderBy('startdatum', 'desc')
-            ->paginate(10);
+        $startDerWoche = \Carbon\Carbon::now()->startOfWeek()->toDateString();
+        $aktuell = Wochenbericht::where('azubi_id', $user->id)
+            ->where('startdatum', $startDerWoche)
+            ->with('eintraege')
+            ->first();
 
-        return view('wochenbericht.index', compact('berichte'));
+        $query = Wochenbericht::where('azubi_id', $user->id)
+            ->where('startdatum', '!=', $startDerWoche)
+            ->orderBy('startdatum', 'desc');
+
+        if ($request->filled('jahr')) {
+            $query->whereYear('startdatum', $request->jahr);
+        }
+        if ($request->filled('monat')) {
+            $query->whereMonth('startdatum', $request->monat);
+        }
+        if ($request->filled('kw')) {
+            $query->whereRaw('WEEK(startdatum, 1) = ?', [$request->kw]);
+        }
+        if ($request->boolean('nur_signierte')) {
+            $query->where('signiert', true);
+        }
+
+        $vergangen = $query->limit(10)->get();
+
+        $jahre = Wochenbericht::where('azubi_id', $user->id)
+            ->selectRaw('YEAR(startdatum) as jahr')
+            ->distinct()
+            ->orderBy('jahr', 'desc')
+            ->pluck('jahr');
+
+        return view('wochenbericht.index', compact('aktuell', 'vergangen', 'jahre'));
     }
 
-    // Bericht erstellen oder anzeigen
     public function show($id = null)
     {
         $user = auth()->user();
@@ -37,9 +62,8 @@ class WochenberichtController extends Controller
             $bericht = Wochenbericht::where('azubi_id', $user->id)
                 ->findOrFail($id);
         } else {
-            // Aktuelle Woche
             $start = Carbon::now()->startOfWeek()->toDateString();
-            $end   = Carbon::now()->endOfWeek()->subDays(2)->toDateString(); // Freitag
+            $end   = Carbon::now()->endOfWeek()->subDays(2)->toDateString();
 
             $bericht = Wochenbericht::firstOrCreate(
                 ['azubi_id' => $user->id, 'startdatum' => $start],
@@ -54,7 +78,6 @@ class WochenberichtController extends Controller
         return view('wochenbericht.show', compact('bericht', 'eintraege', 'kommentare', 'bearbeitungen'));
     }
 
-    // Eintrag speichern
     public function speichern(Request $request, $id)
     {
         $bericht = Wochenbericht::where('azubi_id', auth()->id())->findOrFail($id);
@@ -93,7 +116,6 @@ class WochenberichtController extends Controller
         return back()->with('success', 'Eintrag gespeichert.');
     }
 
-    // Bericht abgeben
     public function abgeben($id)
     {
         $bericht = Wochenbericht::where('azubi_id', auth()->id())->findOrFail($id);
@@ -110,7 +132,6 @@ class WochenberichtController extends Controller
         return back()->with('success', 'Bericht erfolgreich abgegeben.');
     }
 
-    // Azubi signiert selbst
     public function azubiSignieren($id)
     {
         $bericht = Wochenbericht::where('azubi_id', auth()->id())->findOrFail($id);
@@ -125,5 +146,100 @@ class WochenberichtController extends Controller
         ]);
 
         return back()->with('success', 'Bericht signiert.');
+    }
+
+    public function pdfExport($id)
+    {
+        $user = auth()->user();
+        $bericht = Wochenbericht::where('azubi_id', $user->id)->with('eintraege')->findOrFail($id);
+
+        $eintraege = [
+            'betrieb'      => $bericht->eintraege->where('kategorie', 'betrieb'),
+            'unterweisung' => $bericht->eintraege->where('kategorie', 'unterweisung'),
+            'berufsschule' => $bericht->eintraege->where('kategorie', 'berufsschule'),
+        ];
+
+        $stunden = [
+            'betrieb'      => $eintraege['betrieb']->sum('stunden'),
+            'unterweisung' => $eintraege['unterweisung']->sum('stunden'),
+            'berufsschule' => $eintraege['berufsschule']->sum('stunden'),
+        ];
+
+        $beginn = $user->ausbildungsbeginn ? \Carbon\Carbon::parse($user->ausbildungsbeginn) : null;
+        $ausbildungsjahr = $beginn
+            ? (int) floor($beginn->diffInMonths($bericht->startdatum) / 12) + 1
+            : '?';
+
+        $azubi = $user;
+
+        $pdf = Pdf::loadView('wochenbericht.pdf.ihk', compact(
+            'bericht', 'eintraege', 'stunden', 'azubi', 'ausbildungsjahr'
+        ))->setPaper('a4', 'portrait');
+
+        $dateiname = 'Wochenbericht_KW' . $bericht->startdatum->format('W_Y') . '_' . $user->nachname . '.pdf';
+
+        return $pdf->download($dateiname);
+    }
+
+    public function fehlendErstellen()
+    {
+        $user = auth()->user();
+
+        if (!$user->ausbildungsbeginn) {
+            return back()->with('error', 'Kein Ausbildungsbeginn hinterlegt.');
+        }
+
+        $scanner = new \App\Services\LueckenscanService();
+        $scanner->scan($user);
+
+        return back()->with('success', 'Fehlende Berichte wurden erstellt.');
+    }
+
+    public function sammelPdf(Request $request)
+    {
+        $user = auth()->user();
+
+        $ids = explode(',', $request->ids ?? '');
+        $berichte = Wochenbericht::where('azubi_id', $user->id)
+            ->whereIn('id', $ids)
+            ->with('eintraege')
+            ->orderBy('startdatum')
+            ->get();
+
+        if ($berichte->isEmpty()) {
+            return back()->with('error', 'Keine Berichte ausgewählt.');
+        }
+
+        $beginn = $user->ausbildungsbeginn ? \Carbon\Carbon::parse($user->ausbildungsbeginn) : null;
+
+        $berichteDaten = $berichte->map(function ($bericht) use ($user, $beginn) {
+            $ausbildungsjahr = $beginn
+                ? (int) floor($beginn->diffInMonths($bericht->startdatum) / 12) + 1
+                : '?';
+
+            return [
+                'bericht'        => $bericht,
+                'eintraege'      => [
+                    'betrieb'      => $bericht->eintraege->where('kategorie', 'betrieb'),
+                    'unterweisung' => $bericht->eintraege->where('kategorie', 'unterweisung'),
+                    'berufsschule' => $bericht->eintraege->where('kategorie', 'berufsschule'),
+                ],
+                'stunden'        => [
+                    'betrieb'      => $bericht->eintraege->where('kategorie', 'betrieb')->sum('stunden'),
+                    'unterweisung' => $bericht->eintraege->where('kategorie', 'unterweisung')->sum('stunden'),
+                    'berufsschule' => $bericht->eintraege->where('kategorie', 'berufsschule')->sum('stunden'),
+                ],
+                'azubi'          => $user,
+                'ausbildungsjahr'=> $ausbildungsjahr,
+            ];
+        });
+
+        $pdf = Pdf::loadView('wochenbericht.pdf.sammel', [
+            'berichteDaten' => $berichteDaten,
+        ])->setPaper('a4', 'portrait');
+
+        $dateiname = 'Sammel_Wochenberichte_' . $user->nachname . '_' . now()->format('Y-m-d') . '.pdf';
+
+        return $pdf->download($dateiname);
     }
 }

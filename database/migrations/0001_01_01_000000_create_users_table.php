@@ -8,23 +8,44 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->enum('rolle', ['admin', 'ausbilder', 'azubi'])->default('azubi')->after('email');
-            $table->date('ausbildungsbeginn')->nullable()->after('rolle');
-            $table->date('ausbildungsende')->nullable()->after('ausbildungsbeginn');
-            $table->unsignedBigInteger('klasse_id')->nullable()->after('ausbildungsende');
-            $table->string('abteilung')->nullable()->after('klasse_id');
-            $table->boolean('aktiv')->default(true)->after('abteilung');
+        Schema::create('users', function (Blueprint $table) {
+            $table->id();
+            $table->string('vorname');
+            $table->string('nachname');
+            $table->string('email')->unique();
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('password');
+            $table->enum('rolle', ['admin', 'ausbilder', 'azubi'])->default('azubi');
+            $table->date('ausbildungsbeginn')->nullable();
+            $table->date('ausbildungsende')->nullable();
+            $table->unsignedBigInteger('klasse_id')->nullable();
+            $table->string('abteilung')->nullable();
+            $table->boolean('aktiv')->default(true);
+            $table->boolean('dark_mode')->default(false);
+            $table->rememberToken();
+            $table->timestamps();
+        });
+
+        Schema::create('password_reset_tokens', function (Blueprint $table) {
+            $table->string('email')->primary();
+            $table->string('token');
+            $table->timestamp('created_at')->nullable();
+        });
+
+        Schema::create('sessions', function (Blueprint $table) {
+            $table->string('id')->primary();
+            $table->foreignId('user_id')->nullable()->index();
+            $table->string('ip_address', 45)->nullable();
+            $table->text('user_agent')->nullable();
+            $table->longText('payload');
+            $table->integer('last_activity')->index();
         });
     }
 
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn([
-                'rolle', 'ausbildungsbeginn', 'ausbildungsende',
-                'klasse_id', 'abteilung', 'aktiv'
-            ]);
-        });
+        Schema::dropIfExists('users');
+        Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('sessions');
     }
 };
