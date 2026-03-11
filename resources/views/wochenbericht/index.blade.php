@@ -57,7 +57,12 @@
                     @foreach(['betrieb' => 'Betriebliche Tätigkeiten', 'unterweisung' => 'Unterweisungen', 'berufsschule' => 'Berufsschule'] as $key => $label)
                         <div class="mb-3">
                             <p class="text-xs font-semibold text-gray-500 uppercase mb-1">{{ $label }}</p>
-                            @php $eintraege = $aktuell->eintraege->where('kategorie', $key); @endphp
+
+                            @php
+                                $eintraege = $aktuell->eintraege->where('kategorie', $key);
+                                $aufgaben = $aufgabenVorschau->get($key, collect());
+                            @endphp
+
                             @if($eintraege->count())
                                 @foreach($eintraege as $e)
                                     <div class="flex justify-between text-sm p-2 bg-gray-50 rounded mb-1">
@@ -65,7 +70,21 @@
                                         <span class="text-gray-400 ml-4">{{ $e->stunden }} Std</span>
                                     </div>
                                 @endforeach
-                            @else
+                            @endif
+
+                            @if($aufgaben->count())
+                                @foreach($aufgaben as $a)
+                                    <div class="flex justify-between text-sm p-2 bg-blue-50 rounded mb-1 border border-blue-100">
+                                        <span class="text-blue-800">
+                                            {{ $a->titel }}
+                                            <span class="text-xs text-blue-400 ml-1">({{ $a->status === 'fertig' ? 'Fertig' : 'In Bearbeitung' }})</span>
+                                        </span>
+                                        <span class="text-blue-400 ml-4">{{ $a->stunden }} Std</span>
+                                    </div>
+                                @endforeach
+                            @endif
+
+                            @if($eintraege->count() === 0 && $aufgaben->count() === 0)
                                 <p class="text-xs text-gray-400">Keine Einträge.</p>
                             @endif
                         </div>

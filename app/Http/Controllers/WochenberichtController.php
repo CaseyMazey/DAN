@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Wochenbericht;
 use App\Models\WochenberichtEintrag;
 use App\Models\WochenberichtBearbeitung;
+use App\Models\Aufgabe;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -25,6 +26,19 @@ class WochenberichtController extends Controller
             ->where('startdatum', $startDerWoche)
             ->with('eintraege')
             ->first();
+
+        $aufgabenVorschau = Aufgabe::where('azubi_id', $user->id)
+            ->where('archiviert', false)
+            ->whereIn('status', ['in_bearbeitung', 'fertig'])
+            ->get()
+            ->groupBy(function($a) {
+                return match($a->kategorie) {
+                    'betrieb' => 'betrieb',
+                    'unterweisung' => 'unterweisung',
+                    'berufsschule' => 'berufsschule',
+                    default => 'betrieb'
+                };
+            });
 
         $query = Wochenbericht::where('azubi_id', $user->id)
             ->where('startdatum', '!=', $startDerWoche)
@@ -51,7 +65,7 @@ class WochenberichtController extends Controller
             ->orderBy('jahr', 'desc')
             ->pluck('jahr');
 
-        return view('wochenbericht.index', compact('aktuell', 'vergangen', 'jahre'));
+        return view('wochenbericht.index', compact('aktuell', 'vergangen', 'jahre', 'aufgabenVorschau'));
     }
 
     public function show($id = null)
@@ -59,8 +73,7 @@ class WochenberichtController extends Controller
         $user = auth()->user();
 
         if ($id) {
-            $bericht = Wochenbericht::where('azubi_id', $user->id)
-                ->findOrFail($id);
+            $bericht = Wochenbericht::where('azubi_id', $user->id)->findOrFail($id);
         } else {
             $start = Carbon::now()->startOfWeek()->toDateString();
             $end   = Carbon::now()->endOfWeek()->subDays(2)->toDateString();
@@ -218,19 +231,19 @@ class WochenberichtController extends Controller
                 : '?';
 
             return [
-                'bericht'        => $bericht,
-                'eintraege'      => [
+                'bericht'         => $bericht,
+                'eintraege'       => [
                     'betrieb'      => $bericht->eintraege->where('kategorie', 'betrieb'),
                     'unterweisung' => $bericht->eintraege->where('kategorie', 'unterweisung'),
                     'berufsschule' => $bericht->eintraege->where('kategorie', 'berufsschule'),
                 ],
-                'stunden'        => [
+                'stunden'         => [
                     'betrieb'      => $bericht->eintraege->where('kategorie', 'betrieb')->sum('stunden'),
                     'unterweisung' => $bericht->eintraege->where('kategorie', 'unterweisung')->sum('stunden'),
                     'berufsschule' => $bericht->eintraege->where('kategorie', 'berufsschule')->sum('stunden'),
                 ],
-                'azubi'          => $user,
-                'ausbildungsjahr'=> $ausbildungsjahr,
+                'azubi'           => $user,
+                'ausbildungsjahr' => $ausbildungsjahr,
             ];
         });
 
