@@ -166,32 +166,20 @@ class WochenberichtController extends Controller
         $user = auth()->user();
         $bericht = Wochenbericht::where('azubi_id', $user->id)->with('eintraege')->findOrFail($id);
 
-        $eintraege = [
-            'betrieb'      => $bericht->eintraege->where('kategorie', 'betrieb'),
-            'unterweisung' => $bericht->eintraege->where('kategorie', 'unterweisung'),
-            'berufsschule' => $bericht->eintraege->where('kategorie', 'berufsschule'),
-        ];
-
-        $stunden = [
-            'betrieb'      => $eintraege['betrieb']->sum('stunden'),
-            'unterweisung' => $eintraege['unterweisung']->sum('stunden'),
-            'berufsschule' => $eintraege['berufsschule']->sum('stunden'),
-        ];
-
         $beginn = $user->ausbildungsbeginn ? \Carbon\Carbon::parse($user->ausbildungsbeginn) : null;
         $ausbildungsjahr = $beginn
             ? (int) floor($beginn->diffInMonths($bericht->startdatum) / 12) + 1
             : '?';
 
-        $azubi = $user;
-
-        $pdf = Pdf::loadView('wochenbericht.pdf.ihk', compact(
-            'bericht', 'eintraege', 'stunden', 'azubi', 'ausbildungsjahr'
-        ))->setPaper('a4', 'portrait');
+        $service = new \App\Services\WochenberichtPdfService();
+        $pdfContent = $service->generate($bericht, $user, $ausbildungsjahr);
 
         $dateiname = 'Wochenbericht_KW' . $bericht->startdatum->format('W_Y') . '_' . $user->nachname . '.pdf';
 
-        return $pdf->download($dateiname);
+        return response($pdfContent, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $dateiname . '"',
+        ]);
     }
 
     public function fehlendErstellen()
