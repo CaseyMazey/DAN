@@ -132,7 +132,10 @@ body{font-family:var(--p-font);background:var(--p-bg);color:var(--p-text)}
 
 .fg{display:flex;flex-direction:column;gap:5px}
 .fl{font-size:12.5px;font-weight:600;color:var(--p-muted)}
-.fi{background:var(--p-bg);border:1px solid var(--p-border);border-radius:var(--p-rsm);padding:8px 12px;font-size:13.5px;color:var(--p-text);font-family:var(--p-font);outline:none;transition:border-color .12s;width:100%}
+.fi{background:var(--p-bg);border:1px solid var(--p-border);border-radius:var(--p-rsm);padding:8px 12px;font-size:13.5px;color:var(--p-text);font-family:var(--p-font);outline:none;transition:border-color .12s;width:100%;color-scheme:light}
+html[data-theme="dark"] .fi{color-scheme:dark}
+input[type="date"]::-webkit-calendar-picker-indicator{opacity:.6;filter:var(--date-icon-filter,none);cursor:pointer}
+html[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.7}
 .fi:focus{border-color:var(--p-blue)}
 textarea.fi{resize:vertical;min-height:68px}
 
@@ -264,7 +267,7 @@ textarea.fi{resize:vertical;min-height:68px}
                     @if($eintrag->note)
                         @php
                             $n = $eintrag->note;
-                            $cls = $n <= 2 ? 'good' : ($n <= 3.5 ? 'mid' : 'bad');
+                            $cls = $n <= 2 ? 'good' : ($n <= 4 ? 'mid' : 'bad');
                         @endphp
                         <div class="note-badge {{ $cls }}">{{ $n }}</div>
                     @else

@@ -1,5 +1,9 @@
 <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
+    /* Global body bg so dark mode covers the full viewport on every page */
+    :root { --p-bg:#F4F7FB; }
+    html[data-theme="dark"] { --p-bg:#0D1117; }
+    body { background: var(--p-bg) !important; }
 
     /* ─── CSS Variables ─── */
     :root {
@@ -397,16 +401,39 @@
         if (moon) moon.style.display = on ? 'none'  : 'block';
     }
 
-    // Apply saved preference immediately
-    @auth
-        applyDark({{ auth()->user()->dark_mode ? 'true' : 'false' }});
-    @endauth
+    // Apply from localStorage immediately (prevents flash on page load)
+    (function() {
+        const stored = localStorage.getItem('dan_dark');
+        @auth
+        const serverPref = {{ auth()->user()->dark_mode ? 'true' : 'false' }};
+        // If no localStorage entry yet, seed from server preference
+        if (stored === null) {
+            localStorage.setItem('dan_dark', serverPref ? '1' : '0');
+            applyDark(serverPref);
+        } else {
+            applyDark(stored === '1');
+        }
+        @else
+        if (stored === '1') applyDark(true);
+        @endauth
+    })();
 
     window.dnToggleDark = function () {
         const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-        applyDark(!isDark);
+        const next = !isDark;
+        applyDark(next);
+        localStorage.setItem('dan_dark', next ? '1' : '0');
         const cb = document.getElementById('dark_mode_toggle');
-        if (cb) cb.checked = !isDark;
+        if (cb) cb.checked = next;
+        // Persist to server (fire & forget)
+        const token = document.querySelector('meta[name="csrf-token"]');
+        if (token) {
+            const fd = new FormData();
+            fd.append('_method', 'PATCH');
+            fd.append('dark_mode', next ? '1' : '0');
+            fd.append('_token', token.content);
+            fetch('{{ route("profile.darkmode") }}', { method: 'POST', body: fd }).catch(() => {});
+        }
     };
 
     window.dnToggle = function (id, trigger) {

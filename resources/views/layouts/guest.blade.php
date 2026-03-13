@@ -11,11 +11,15 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
+        <!-- Dark mode anti-flash -->
+        <script>(function(){if(localStorage.getItem('dan_dark')==='1')document.documentElement.setAttribute('data-theme','dark');})();</script>
+        <style>:root{--p-bg:#F4F7FB;}html[data-theme="dark"]{--p-bg:#0D1117;}html,body,.dan-wrap{background:var(--p-bg)!important;}</style>
+
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="font-sans text-gray-900 antialiased">
-        <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
+        <div class="dan-wrap min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0">
             <div>
                 <a href="/">
                     <x-application-logo class="w-20 h-20 fill-current text-gray-500" />

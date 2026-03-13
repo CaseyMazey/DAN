@@ -261,8 +261,8 @@ body { font-family: var(--p-font); background: var(--p-bg); color: var(--p-text)
         </div>
         <div class="dash-grid-3">
             <div class="stat-card">
-                <div class="stat-icon" style="background:#F4F7FB">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <div class="stat-icon" style="background:var(--p-border)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--p-muted)" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 </div>
                 <div class="stat-number">{{ $aufgabenStats['geplant'] }}</div>
                 <div class="stat-label">Geplant</div>
