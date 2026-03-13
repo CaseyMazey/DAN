@@ -21,45 +21,53 @@
                 <div class="p-4 bg-red-100 text-red-800 rounded">{{ session('error') }}</div>
             @endif
 
-            {{-- Aktueller Bericht --}}
+            {{-- Vorschau Block --}}
             <div class="bg-white shadow rounded-lg p-6">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-semibold text-lg">Aktueller Bericht</h3>
-                    @if($aktuell)
+                    <h3 class="font-semibold text-lg">
+                        @if($vorschau && $aktuell && $vorschau->id === $aktuell->id)
+                            Aktueller Bericht
+                        @elseif($vorschau)
+                            Vorschau: KW {{ $vorschau->startdatum->format('W / Y') }}
+                        @else
+                            Aktueller Bericht
+                        @endif
+                    </h3>
+                    @if($vorschau)
                         <span class="text-sm text-gray-500">
-                            KW {{ $aktuell->startdatum->format('W') }} —
-                            {{ $aktuell->startdatum->format('d.m.Y') }} bis
-                            {{ $aktuell->enddatum->format('d.m.Y') }}
+                            KW {{ $vorschau->startdatum->format('W') }} —
+                            {{ $vorschau->startdatum->format('d.m.Y') }} bis
+                            {{ $vorschau->enddatum->format('d.m.Y') }}
                         </span>
                     @endif
                 </div>
 
-                @if($aktuell)
+                @if($vorschau)
                     {{-- Status-Badges --}}
                     <div class="flex flex-wrap gap-2 mb-4">
-                        @if($aktuell->gesperrt)
+                        @if($vorschau->gesperrt)
                             <span class="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-xs">🔒 Gesperrt</span>
-                        @elseif($aktuell->signiert)
+                        @elseif($vorschau->signiert)
                             <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs">✅ Ausbilder signiert</span>
-                        @elseif($aktuell->azubi_signiert)
+                        @elseif($vorschau->azubi_signiert)
                             <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">✍️ Von dir signiert</span>
-                        @elseif($aktuell->abgegeben)
+                        @elseif($vorschau->abgegeben)
                             <span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs">📤 Abgegeben</span>
                         @else
                             <span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">✏️ In Bearbeitung</span>
                         @endif
-                        @if($aktuell->bearbeitet)
+                        @if($vorschau->bearbeitet)
                             <span class="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs">⚠️ Bearbeitet</span>
                         @endif
                     </div>
 
-                    {{-- Vorschau Einträge --}}
+                    {{-- Einträge --}}
                     @foreach(['betrieb' => 'Betriebliche Tätigkeiten', 'unterweisung' => 'Unterweisungen', 'berufsschule' => 'Berufsschule'] as $key => $label)
                         <div class="mb-3">
                             <p class="text-xs font-semibold text-gray-500 uppercase mb-1">{{ $label }}</p>
 
                             @php
-                                $eintraege = $aktuell->eintraege->where('kategorie', $key);
+                                $eintraege = $vorschau->eintraege->where('kategorie', $key);
                                 $aufgaben = $aufgabenVorschau->get($key, collect());
                             @endphp
 
@@ -74,12 +82,17 @@
 
                             @if($aufgaben->count())
                                 @foreach($aufgaben as $a)
-                                    <div class="flex justify-between text-sm p-2 bg-blue-50 rounded mb-1 border border-blue-100">
-                                        <span class="text-blue-800">
-                                            {{ $a->titel }}
-                                            <span class="text-xs text-blue-400 ml-1">({{ $a->status === 'fertig' ? 'Fertig' : 'In Bearbeitung' }})</span>
-                                        </span>
-                                        <span class="text-blue-400 ml-4">{{ $a->stunden }} Std</span>
+                                    <div class="text-sm p-2 bg-blue-50 rounded mb-1 border border-blue-100">
+                                        <div class="flex justify-between">
+                                            <span class="text-blue-800 font-medium">
+                                                {{ $a->titel }}
+                                                <span class="text-xs text-blue-400 ml-1">({{ $a->status === 'fertig' ? 'Fertig' : 'In Bearbeitung' }})</span>
+                                            </span>
+                                            <span class="text-blue-400 ml-4">{{ $a->stunden }} Std</span>
+                                        </div>
+                                        @if($a->beschreibung)
+                                            <p class="text-xs text-blue-600 mt-1">{{ $a->beschreibung }}</p>
+                                        @endif
                                     </div>
                                 @endforeach
                             @endif
@@ -92,33 +105,40 @@
 
                     {{-- Aktionen --}}
                     <div class="flex flex-wrap gap-2 mt-4 pt-4 border-t">
-                        <a href="{{ route('wochenbericht.show', $aktuell->id) }}"
+                        <a href="{{ route('wochenbericht.show', $vorschau->id) }}"
                             class="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">
                             ✏️ Bearbeiten
                         </a>
 
-                        @if(!$aktuell->abgegeben)
-                            <form method="POST" action="{{ route('wochenbericht.abgeben', $aktuell->id) }}">
-                                @csrf
-                                <button class="px-4 py-2 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600">
-                                    📤 Abgeben
-                                </button>
-                            </form>
-                        @endif
-
-                        @if($aktuell->abgegeben && !$aktuell->azubi_signiert)
-                            <form method="POST" action="{{ route('wochenbericht.signieren', $aktuell->id) }}">
+                        @if(!$vorschau->azubi_signiert)
+                            <form method="POST" action="{{ route('wochenbericht.signieren', $vorschau->id) }}">
                                 @csrf
                                 <button class="px-4 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700">
                                     ✍️ Signieren
                                 </button>
                             </form>
+                        @else
+                            <span class="px-4 py-2 bg-green-100 text-green-700 rounded text-sm">✅ Signiert</span>
+                            <form method="POST" action="{{ route('wochenbericht.signatur.loeschen', $vorschau->id) }}">
+                                @csrf
+                                @method('DELETE')
+                                <button class="px-4 py-2 bg-red-100 text-red-600 rounded text-sm hover:bg-red-200">
+                                    🗑️ Signatur löschen
+                                </button>
+                            </form>
                         @endif
 
-                        <a href="{{ route('wochenbericht.pdf', $aktuell->id) }}"
+                        <a href="{{ route('wochenbericht.pdf', $vorschau->id) }}"
                             class="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50">
                             📄 PDF
                         </a>
+
+                        @if($aktuell && $vorschau->id !== $aktuell->id)
+                            <a href="{{ route('wochenbericht.index') }}"
+                                class="px-4 py-2 bg-gray-100 text-gray-600 rounded text-sm hover:bg-gray-200">
+                                ↩️ Zurück zum aktuellen
+                            </a>
+                        @endif
                     </div>
                 @else
                     <p class="text-sm text-gray-400">Kein Bericht für diese Woche vorhanden.</p>
@@ -176,7 +196,8 @@
 
                     {{-- Tabelle --}}
                     @forelse($vergangen as $bericht)
-                        <div class="flex items-center justify-between p-3 border rounded-lg mb-2 hover:bg-gray-50">
+                        <div class="flex items-center justify-between p-3 border rounded-lg mb-2 hover:bg-gray-50
+                            {{ $vorschau && $vorschau->id === $bericht->id ? 'border-blue-300 bg-blue-50' : '' }}">
                             <div class="flex items-center gap-3">
                                 <input type="checkbox" class="sammel-check" value="{{ $bericht->id }}">
                                 <div>
@@ -209,9 +230,12 @@
                                     <span class="px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-xs">⚠️ Bearbeitet</span>
                                 @endif
 
-                                <a href="{{ route('wochenbericht.show', $bericht->id) }}"
-                                    class="px-3 py-1 bg-blue-50 text-blue-600 rounded text-xs hover:bg-blue-100">
-                                    Bearbeiten
+                                <a href="{{ route('wochenbericht.index', ['vorschau' => $bericht->id]) }}"
+                                    class="px-3 py-1 rounded text-xs
+                                        {{ $vorschau && $vorschau->id === $bericht->id
+                                            ? 'bg-blue-600 text-white'
+                                            : 'bg-blue-50 text-blue-600 hover:bg-blue-100' }}">
+                                    {{ $vorschau && $vorschau->id === $bericht->id ? '👁 Aktiv' : 'Vorschau' }}
                                 </a>
                                 <a href="{{ route('wochenbericht.pdf', $bericht->id) }}"
                                     class="px-3 py-1 bg-gray-100 text-gray-600 rounded text-xs hover:bg-gray-200">

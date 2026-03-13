@@ -29,12 +29,15 @@ class ProfileController extends Controller
             'email'            => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
             'ausbildungsbeginn'=> ['nullable', 'date'],
             'ausbildungsende'  => ['nullable', 'date', 'after:ausbildungsbeginn'],
+            'abteilung'        => ['nullable', 'string', 'max:255'],
         ]);
 
         $user->vorname           = $request->vorname;
         $user->nachname          = $request->nachname;
         $user->ausbildungsbeginn = $request->ausbildungsbeginn;
         $user->ausbildungsende   = $request->ausbildungsende;
+        $user->abteilung         = $request->abteilung;
+        $user->dark_mode         = $request->boolean('dark_mode');
 
         if ($user->email !== $request->email) {
             $user->email = $request->email;
@@ -85,5 +88,31 @@ class ProfileController extends Controller
         $request->session()->regenerateToken();
 
         return Redirect::to('/');
+    }
+    public function updateSignatur(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        $pfad = null;
+
+        if ($request->hasFile('signatur_bild')) {
+            $pfad = $request->file('signatur_bild')->store('signaturen', 'public');
+        } elseif ($request->filled('signatur_canvas')) {
+            $data = $request->signatur_canvas;
+            $data = str_replace('data:image/png;base64,', '', $data);
+            $data = base64_decode($data);
+            $dateiname = 'signaturen/' . $user->id . '_' . time() . '.png';
+            \Illuminate\Support\Facades\Storage::disk('public')->put($dateiname, $data);
+            $pfad = $dateiname;
+        }
+
+        if ($pfad) {
+            // Alte Signatur löschen
+            if ($user->signatur_pfad) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->signatur_pfad);
+            }
+            $user->update(['signatur_pfad' => $pfad]);
+        }
+
+        return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 }

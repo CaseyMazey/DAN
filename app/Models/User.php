@@ -22,6 +22,7 @@ class User extends Authenticatable
         'abteilung',
         'aktiv',
         'dark_mode',
+        'signatur_pfad',
     ];
 
     protected $hidden = [
@@ -43,5 +44,11 @@ class User extends Authenticatable
     public function getFullNameAttribute(): string
     {
         return $this->vorname . ' ' . $this->nachname;
+    }
+    public function klasse() {
+        return $this->belongsTo(Klasse::class);
+    }
+    public function klassen() {
+        return $this->belongsToMany(Klasse::class, 'ausbilder_klassen');
     }
 }

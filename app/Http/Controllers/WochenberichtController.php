@@ -26,6 +26,15 @@ class WochenberichtController extends Controller
             ->where('startdatum', $startDerWoche)
             ->with('eintraege')
             ->first();
+            
+        // Vorschau: entweder gewählter Bericht oder aktueller
+        if ($request->filled('vorschau')) {
+            $vorschau = Wochenbericht::where('azubi_id', $user->id)
+                ->with('eintraege')
+                ->findOrFail($request->vorschau);
+        } else {
+            $vorschau = $aktuell;
+        }
 
         $aufgabenVorschau = Aufgabe::where('azubi_id', $user->id)
             ->where('archiviert', false)
@@ -39,6 +48,10 @@ class WochenberichtController extends Controller
                     default => 'betrieb'
                 };
             });
+        // Aufgaben nur bei aktuellem Bericht anzeigen
+        if ($vorschau?->id !== $aktuell?->id) {
+            $aufgabenVorschau = collect();
+        }
 
         $query = Wochenbericht::where('azubi_id', $user->id)
             ->where('startdatum', '!=', $startDerWoche)
@@ -65,7 +78,7 @@ class WochenberichtController extends Controller
             ->orderBy('jahr', 'desc')
             ->pluck('jahr');
 
-        return view('wochenbericht.index', compact('aktuell', 'vergangen', 'jahre', 'aufgabenVorschau'));
+        return view('wochenbericht.index', compact('aktuell', 'vorschau', 'vergangen', 'jahre', 'aufgabenVorschau'));
     }
 
     public function show($id = null)
@@ -137,6 +150,33 @@ class WochenberichtController extends Controller
             return back()->with('error', 'Dieser Bericht ist bereits gesperrt.');
         }
 
+        $aufgaben = Aufgabe::where('azubi_id', auth()->id())
+            ->where('archiviert', false)
+            ->whereIn('status', ['in_bearbeitung', 'fertig'])
+            ->get();
+
+        foreach ($aufgaben as $aufgabe) {
+            // Snapshot: Eintrag in den Bericht kopieren
+            WochenberichtEintrag::create([
+                'wochenbericht_id' => $bericht->id,
+                'kategorie'        => $aufgabe->kategorie === 'unterweisung' ? 'unterweisung' : $aufgabe->kategorie,
+                'beschreibung'     => $aufgabe->titel . ($aufgabe->beschreibung ? ': ' . $aufgabe->beschreibung : ''),
+                'stunden'          => $aufgabe->stunden,
+            ]);
+
+            // Nur fertige Aufgaben archivieren
+            if ($aufgabe->status === 'fertig') {
+                $aufgabe->update([
+                    'in_wochenbericht' => true,
+                    'archiviert'       => true,
+                    'archiviert_am'    => now(),
+                ]);
+            } else {
+                // In Bearbeitung: nur als "im Bericht vermerkt" markieren, bleibt aktiv
+                $aufgabe->update(['in_wochenbericht' => true]);
+            }
+        }
+
         $bericht->update([
             'abgegeben'    => true,
             'abgegeben_am' => now(),
@@ -148,10 +188,6 @@ class WochenberichtController extends Controller
     public function azubiSignieren($id)
     {
         $bericht = Wochenbericht::where('azubi_id', auth()->id())->findOrFail($id);
-
-        if (!$bericht->abgegeben) {
-            return back()->with('error', 'Bericht muss zuerst abgegeben werden.');
-        }
 
         $bericht->update([
             'azubi_signiert'    => true,
@@ -166,13 +202,25 @@ class WochenberichtController extends Controller
         $user = auth()->user();
         $bericht = Wochenbericht::where('azubi_id', $user->id)->with('eintraege')->findOrFail($id);
 
+        $eintraege = [
+            'betrieb'      => $bericht->eintraege->filter(fn($e) => $e->kategorie === 'betrieb')->values(),
+            'unterweisung' => $bericht->eintraege->filter(fn($e) => $e->kategorie === 'unterweisung')->values(),
+            'berufsschule' => $bericht->eintraege->filter(fn($e) => $e->kategorie === 'berufsschule')->values(),
+        ];
+
+        $stunden = [
+            'betrieb'      => $bericht->eintraege->where('kategorie', 'betrieb')->sum('stunden'),
+            'unterweisung' => $bericht->eintraege->where('kategorie', 'unterweisung')->sum('stunden'),
+            'berufsschule' => $bericht->eintraege->where('kategorie', 'berufsschule')->sum('stunden'),
+        ];
+
         $beginn = $user->ausbildungsbeginn ? \Carbon\Carbon::parse($user->ausbildungsbeginn) : null;
         $ausbildungsjahr = $beginn
             ? (int) floor($beginn->diffInMonths($bericht->startdatum) / 12) + 1
             : '?';
 
         $service = new \App\Services\WochenberichtPdfService();
-        $pdfContent = $service->generate($bericht, $user, $ausbildungsjahr);
+        $pdfContent = $service->generate($bericht, $user, $ausbildungsjahr, $eintraege, $stunden);
 
         $dateiname = 'Wochenbericht_KW' . $bericht->startdatum->format('W_Y') . '_' . $user->nachname . '.pdf';
 
@@ -181,7 +229,6 @@ class WochenberichtController extends Controller
             'Content-Disposition' => 'attachment; filename="' . $dateiname . '"',
         ]);
     }
-
     public function fehlendErstellen()
     {
         $user = auth()->user();
@@ -242,5 +289,16 @@ class WochenberichtController extends Controller
         $dateiname = 'Sammel_Wochenberichte_' . $user->nachname . '_' . now()->format('Y-m-d') . '.pdf';
 
         return $pdf->download($dateiname);
+    }
+    public function signaturLoeschen($id)
+    {
+        $bericht = Wochenbericht::where('azubi_id', auth()->id())->findOrFail($id);
+
+        $bericht->update([
+            'azubi_signiert'    => false,
+            'azubi_signiert_am' => null,
+        ]);
+
+        return back()->with('success', 'Signatur entfernt.');
     }
 }

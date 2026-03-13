@@ -3,10 +3,11 @@
 namespace App\Services;
 
 use setasign\Fpdi\Fpdi;
+use App\Models\Aufgabe;
 
 class WochenberichtPdfService
 {
-    public function generate($bericht, $azubi, $ausbildungsjahr)
+    public function generate($bericht, $azubi, $ausbildungsjahr, $eintraege, $stunden)
     {
         $pdf = new Fpdi();
         $pdf->AddPage('P', 'A4');
@@ -16,87 +17,84 @@ class WochenberichtPdfService
 
         $pdf->SetFont('Helvetica', '', 10);
 
-        // Name
+        // Kopfdaten
         $pdf->SetXY(85, 49);
         $pdf->Write(0, $azubi->full_name);
 
-        // Ausbildungsjahr
         $pdf->SetXY(85, 58);
         $pdf->Write(0, $ausbildungsjahr . '. Jahr');
 
-        // Abteilung
-        $pdf->SetXY(165, 59);
-        $pdf->Write(0, $azubi->abteilung ?? '');
+        $pdf->SetXY(151, 55);
+        $pdf->MultiCell(55, 4, $this->wrapText($azubi->abteilung ?? '', 22), 0, 'L');
 
-        // Datum von
         $pdf->SetXY(85, 67);
         $pdf->Write(0, $bericht->startdatum->format('d.m.Y'));
 
-        // Datum bis
         $pdf->SetXY(116, 67);
         $pdf->Write(0, $bericht->enddatum->format('d.m.Y'));
 
-        // Betrieb Stunden
-        $betriebEintraege = $bericht->eintraege->where('kategorie', 'betrieb');
-        $pdf->SetFont('Helvetica', '', 10);
-        $pdf->SetXY(180, 90);
-        $pdf->Write(0, number_format($betriebEintraege->sum('stunden'), 2));
+        // Sektionen ausgeben
+        $sektionen = [
+            'betrieb'      => ['stundenY' => 90,  'inhaltY' => 88,  'maxY' => 128],
+            'unterweisung' => ['stundenY' => 141, 'inhaltY' => 139, 'maxY' => 188],
+            'berufsschule' => ['stundenY' => 191, 'inhaltY' => 189, 'maxY' => 248],
+        ];
 
-        // Betrieb Inhalt
-        $pdf->SetFont('Helvetica', '', 9);
-        $y = 96;
-        foreach ($betriebEintraege as $e) {
-            $pdf->SetXY(15, $y);
-            $pdf->MultiCell(160, 5, $e->beschreibung, 0, 'L');
-            $y += 6;
-            if ($y > 128) break;
+        foreach ($sektionen as $key => $pos) {
+            // Stunden
+            $pdf->SetFont('Helvetica', '', 10);
+            $pdf->SetXY(180, $pos['stundenY']);
+            $pdf->Write(0, number_format($stunden[$key], 2));
+
+            // Inhalt
+            $pdf->SetFont('Helvetica', '', 9);
+            $y = $pos['inhaltY'];
+            foreach ($eintraege[$key] as $e) {
+                $text = $e instanceof Aufgabe ? $e->titel : $e->beschreibung;
+                $pdf->SetXY(27, $y);
+                $pdf->MultiCell(150, 5, $text, 0, 'L');
+                $y += 6;
+                if ($y > $pos['maxY']) break;
+            }
         }
 
-        // Unterweisung Stunden
-        $unterweisungEintraege = $bericht->eintraege->where('kategorie', 'unterweisung');
-        $pdf->SetFont('Helvetica', '', 10);
-        $pdf->SetXY(180, 141);
-        $pdf->Write(0, number_format($unterweisungEintraege->sum('stunden'), 2));
-
-        // Unterweisung Inhalt
-        $pdf->SetFont('Helvetica', '', 9);
-        $y = 156;
-        foreach ($unterweisungEintraege as $e) {
-            $pdf->SetXY(15, $y);
-            $pdf->MultiCell(160, 5, $e->beschreibung, 0, 'L');
-            $y += 6;
-            if ($y > 188) break;
+        // Azubi Signatur
+        if ($bericht->azubi_signiert && $azubi->signatur_pfad) {
+            $pfad = storage_path('app/public/' . $azubi->signatur_pfad);
+            if (file_exists($pfad)) {
+                $pdf->Image($pfad, 27, 236, 60, 20, 'PNG');
+            }
         }
 
-        // Berufsschule Stunden
-        $berufsschuleEintraege = $bericht->eintraege->where('kategorie', 'berufsschule');
-        $pdf->SetFont('Helvetica', '', 10);
-        $pdf->SetXY(180, 191);
-        $pdf->Write(0, number_format($berufsschuleEintraege->sum('stunden'), 2));
-
-        // Berufsschule Inhalt
-        $pdf->SetFont('Helvetica', '', 9);
-        $y = 216;
-        foreach ($berufsschuleEintraege as $e) {
-            $pdf->SetXY(15, $y);
-            $pdf->MultiCell(160, 5, $e->beschreibung, 0, 'L');
-            $y += 6;
-            if ($y > 248) break;
-        }
-
-        // Signaturdaten
-        if ($bericht->azubi_signiert) {
-            $pdf->SetFont('Helvetica', '', 8);
-            $pdf->SetXY(15, 272);
-            $pdf->Write(0, $bericht->azubi_signiert_am?->format('d.m.Y') . ', ' . $azubi->full_name);
-        }
-
+        // Ausbilder Signatur
         if ($bericht->signiert) {
-            $pdf->SetFont('Helvetica', '', 8);
-            $pdf->SetXY(115, 272);
-            $pdf->Write(0, $bericht->signiert_am?->format('d.m.Y'));
+            // Ausbilder-Objekt brauchen wir noch — kommt später
         }
 
         return $pdf->Output('S');
+    }
+
+    private function wrapText(string $text, int $maxChars): string
+    {
+        $lines = [];
+        $words = explode(' ', $text);
+        $zeile = '';
+
+        foreach ($words as $word) {
+            if ($zeile === '') {
+                $zeile = $word;
+            } elseif (strlen($zeile . ' ' . $word) <= $maxChars) {
+                $zeile .= ' ' . $word;
+            } else {
+                $lines[] = $zeile;
+                $zeile = $word;
+            }
+        }
+
+        if ($zeile !== '') {
+            $lines[] = $zeile;
+        }
+
+        return implode("\n", $lines);
     }
 }
