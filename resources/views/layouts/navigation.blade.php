@@ -276,10 +276,7 @@
                 @endif
 
                 @if(auth()->user()->rolle === 'ausbilder')
-                    <a href="{{ route('wochenbericht.index') }}" class="dn-link {{ request()->routeIs('wochenbericht.*') ? 'active' : '' }}">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                        Wochenberichte
-                    </a>
+                    {{-- Ausbilder sehen Berichte über das Dashboard / Klassen-Ansicht --}}
                 @endif
 
                 @if(auth()->user()->rolle === 'admin')
@@ -294,6 +291,10 @@
                             <a href="{{ route('admin.nutzer') }}" class="dn-dd-item">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                                 Nutzerverwaltung
+                            </a>
+                            <a href="{{ route('admin.abteilungen') }}" class="dn-dd-item {{ request()->routeIs('admin.abteilungen*') ? 'active' : '' }}">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+                                Abteilungen
                             </a>
                             <a href="{{ route('admin.klassen') }}" class="dn-dd-item">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
@@ -373,10 +374,11 @@
                 <a href="{{ route('kalender.index') }}" class="dn-link {{ request()->routeIs('kalender.*') ? 'active' : '' }}">Kalender</a>
             @endif
             @if(auth()->user()->rolle === 'ausbilder')
-                <a href="{{ route('wochenbericht.index') }}" class="dn-link {{ request()->routeIs('wochenbericht.*') ? 'active' : '' }}">Wochenberichte</a>
+                {{-- Ausbilder sehen Berichte über das Dashboard / Klassen-Ansicht --}}
             @endif
             @if(auth()->user()->rolle === 'admin')
                 <a href="{{ route('admin.nutzer') }}" class="dn-link">Nutzerverwaltung</a>
+                <a href="{{ route('admin.abteilungen') }}" class="dn-link">Abteilungen</a>
                 <a href="{{ route('admin.klassen') }}" class="dn-link">Klassen</a>
                 <a href="{{ route('admin.einladungen') }}" class="dn-link">Einladungen</a>
             @endif

@@ -36,10 +36,11 @@ class WochenberichtAbgeben extends Command
 
             foreach ($aufgaben as $aufgabe) {
                 WochenberichtEintrag::create([
-                    'wochenbericht_id' => $bericht->id,
-                    'kategorie'        => $aufgabe->kategorie,
-                    'beschreibung'     => $aufgabe->titel . ($aufgabe->beschreibung ? ': ' . $aufgabe->beschreibung : ''),
-                    'stunden'          => $aufgabe->stunden,
+                    'wochenbericht_id'     => $bericht->id,
+                    'kategorie'            => $aufgabe->kategorie,
+                    'beschreibung'         => $aufgabe->titel . ($aufgabe->beschreibung ? ': ' . $aufgabe->beschreibung : ''),
+                    'stunden'              => $aufgabe->stunden,
+                    'stunden_abziehen_bei' => $aufgabe->stunden_abziehen_bei,
                 ]);
 
                 if ($aufgabe->status === 'fertig') {

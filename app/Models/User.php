@@ -23,6 +23,8 @@ class User extends Authenticatable
         'aktiv',
         'dark_mode',
         'signatur_pfad',
+        'archiviert',
+        'archiviert_am',
     ];
 
     protected $hidden = [
@@ -38,6 +40,8 @@ class User extends Authenticatable
             'ausbildungsbeginn' => 'date',
             'ausbildungsende'   => 'date',
             'dark_mode'         => 'boolean',
+            'archiviert'        => 'boolean',
+            'archiviert_am'     => 'datetime',
         ];
     }
 
@@ -45,10 +49,21 @@ class User extends Authenticatable
     {
         return $this->vorname . ' ' . $this->nachname;
     }
+
     public function klasse() {
         return $this->belongsTo(Klasse::class);
     }
+
     public function klassen() {
         return $this->belongsToMany(Klasse::class, 'ausbilder_klassen');
+    }
+
+    // Scopes
+    public function scopeAktiv($query) {
+        return $query->where('archiviert', false);
+    }
+
+    public function scopeArchiviert($query) {
+        return $query->where('archiviert', true);
     }
 }

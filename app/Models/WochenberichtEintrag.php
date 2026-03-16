@@ -8,8 +8,8 @@ class WochenberichtEintrag extends Model
 {
     protected $table = 'wochenbericht_eintraege';
     protected $fillable = [
-    'wochenbericht_id', 'kategorie', 'beschreibung', 'stunden'
-];
+        'wochenbericht_id', 'kategorie', 'beschreibung', 'stunden', 'stunden_abziehen_bei'
+    ];
 
     public function wochenbericht()
     {

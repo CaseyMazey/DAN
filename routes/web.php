@@ -29,7 +29,7 @@ Route::middleware(['auth', 'rolle:azubi'])->group(function () {
     Route::post('/wochenbericht/{id}/abgeben', [WochenberichtController::class, 'abgeben'])->name('wochenbericht.abgeben');
     Route::post('/wochenbericht/{id}/signieren', [WochenberichtController::class, 'azubiSignieren'])->name('wochenbericht.signieren');
     Route::delete('/wochenbericht/{id}/signatur', [WochenberichtController::class, 'signaturLoeschen'])
-    ->name('wochenbericht.signatur.loeschen');
+        ->name('wochenbericht.signatur.loeschen');
     Route::get('/wochenbericht/{id}/pdf', [WochenberichtController::class, 'pdfExport'])->name('wochenbericht.pdf');
     Route::post('/wochenbericht/fehlend-erstellen', [WochenberichtController::class, 'fehlendErstellen'])->name('wochenbericht.fehlend');
     Route::post('/wochenbericht/sammel-pdf', [WochenberichtController::class, 'sammelPdf'])->name('wochenbericht.sammel');
@@ -51,18 +51,16 @@ Route::middleware(['auth', 'rolle:azubi'])->group(function () {
     Route::patch('/aufgaben/{id}/status', [AufgabeController::class, 'statusAendern'])->name('aufgaben.status');
     Route::patch('/aufgaben/{id}/archivieren', [AufgabeController::class, 'archivieren'])->name('aufgaben.archivieren');
     Route::patch('/aufgaben/{id}/wiederherstellen', [AufgabeController::class, 'wiederherstellen'])->name('aufgaben.wiederherstellen');
-
-    Route::patch('/profile/signatur', [ProfileController::class, 'updateSignatur'])->name('profile.signatur');
 });
 
 // Ausbilder-Routen
 Route::middleware(['auth', 'rolle:ausbilder,admin'])->prefix('ausbilder')->name('ausbilder.')->group(function () {
- 
+
     // Klassen
     Route::get('/klasse/{id}', [AusbilderController::class, 'klasseShow'])->name('klasse.show');
     Route::post('/klasse/{id}/azubi', [AusbilderController::class, 'azubiHinzufuegen'])->name('klasse.azubi.hinzufuegen');
     Route::delete('/klasse/{klasseId}/azubi/{azubiId}', [AusbilderController::class, 'azubiEntfernen'])->name('klasse.azubi.entfernen');
- 
+
     // Berichte
     Route::get('/azubi/{azubiId}/berichte', [AusbilderController::class, 'azubiBerichte'])->name('azubi.berichte');
     Route::get('/bericht/{id}', [AusbilderController::class, 'berichtShow'])->name('bericht.show');
@@ -70,7 +68,7 @@ Route::middleware(['auth', 'rolle:ausbilder,admin'])->prefix('ausbilder')->name(
     Route::post('/bericht/{id}/kommentar', [AusbilderController::class, 'berichtKommentieren'])->name('bericht.kommentieren');
 });
 
-// Admin Routen 
+// Admin-Routen
 Route::middleware(['auth', 'rolle:admin'])->prefix('admin')->name('admin.')->group(function () {
 
     // Nutzer
@@ -89,6 +87,21 @@ Route::middleware(['auth', 'rolle:admin'])->prefix('admin')->name('admin.')->gro
     Route::get('/einladungen', [AdminController::class, 'einladungen'])->name('einladungen');
     Route::post('/einladungen', [AdminController::class, 'einladungSenden'])->name('einladungen.senden');
     Route::delete('/einladungen/{id}', [AdminController::class, 'einladungLoeschen'])->name('einladungen.loeschen');
+
+    // Abteilungen
+    Route::get('/abteilungen', [AdminController::class, 'abteilungen'])->name('abteilungen');
+    Route::post('/abteilungen', [AdminController::class, 'abteilungErstellen'])->name('abteilungen.erstellen');
+    Route::put('/abteilungen/{id}', [AdminController::class, 'abteilungUpdate'])->name('abteilungen.update');
+    Route::delete('/abteilungen/{id}', [AdminController::class, 'abteilungLoeschen'])->name('abteilungen.loeschen');
+
+    // Nutzer-Archivierung
+    Route::post('/nutzer/{id}/archivieren', [AdminController::class, 'nutzerArchivieren'])->name('nutzer.archivieren');
+    Route::post('/nutzer/{id}/wiederherstellen', [AdminController::class, 'nutzerWiederherstellen'])->name('nutzer.wiederherstellen');
+
+    // Klasse/Jahrgang archivieren (kann auch von der Klassen-Seite aus genutzt werden)
+    Route::post('/klassen/{id}/archivieren', [AdminController::class, 'klasseArchivieren'])->name('klassen.archivieren');
+    Route::post('/jahrgang/archivieren', [AdminController::class, 'jahrgangArchivieren'])->name('jahrgang.archivieren');
+
 });
 
 // Profil (alle eingeloggten Nutzer)
@@ -98,10 +111,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::patch('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
     Route::patch('/profile/darkmode', [ProfileController::class, 'updateDarkMode'])
-    ->middleware('auth')
-    ->name('profile.darkmode');
+        ->middleware('auth')
+        ->name('profile.darkmode');
+    Route::patch('/profile/signatur', [ProfileController::class, 'updateSignatur'])->name('profile.signatur');
 });
-
 
 Route::get('/einladung/{token}', [RegisterInviteController::class, 'show'])->name('register.invite');
 Route::post('/einladung/{token}', [RegisterInviteController::class, 'register'])->name('register.invite.submit');

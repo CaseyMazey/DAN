@@ -33,8 +33,9 @@ body { font-family: var(--p-font); background: var(--p-bg); color: var(--p-text)
 .card-title { font-size: 14px; font-weight: 600; color: var(--p-text); }
 .card-body { padding: 20px; }
 
-.admin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-@media (max-width: 640px) { .admin-grid { grid-template-columns: 1fr; } }
+.admin-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+@media (max-width: 800px) { .admin-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .admin-grid { grid-template-columns: 1fr; } }
 
 .admin-link-card {
     background: var(--p-surface);
@@ -74,6 +75,13 @@ body { font-family: var(--p-font); background: var(--p-bg); color: var(--p-text)
                 </div>
                 <div class="admin-link-title">Nutzerverwaltung</div>
                 <div class="admin-link-desc">Rollen zuweisen, Nutzer deaktivieren</div>
+            </a>
+            <a href="{{ route('admin.abteilungen') }}" class="admin-link-card">
+                <div class="admin-link-icon" style="background:var(--p-red-bg)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--p-red)" stroke-width="2" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+                </div>
+                <div class="admin-link-title">Abteilungen</div>
+                <div class="admin-link-desc">Ausbildungsberufe verwalten</div>
             </a>
             <a href="{{ route('admin.klassen') }}" class="admin-link-card">
                 <div class="admin-link-icon" style="background:var(--p-green-bg)">

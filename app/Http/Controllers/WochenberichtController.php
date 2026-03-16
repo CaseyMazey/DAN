@@ -158,10 +158,11 @@ class WochenberichtController extends Controller
         foreach ($aufgaben as $aufgabe) {
             // Snapshot: Eintrag in den Bericht kopieren
             WochenberichtEintrag::create([
-                'wochenbericht_id' => $bericht->id,
-                'kategorie'        => $aufgabe->kategorie === 'unterweisung' ? 'unterweisung' : $aufgabe->kategorie,
-                'beschreibung'     => $aufgabe->titel . ($aufgabe->beschreibung ? ': ' . $aufgabe->beschreibung : ''),
-                'stunden'          => $aufgabe->stunden,
+                'wochenbericht_id'  => $bericht->id,
+                'kategorie'         => $aufgabe->kategorie === 'unterweisung' ? 'unterweisung' : $aufgabe->kategorie,
+                'beschreibung'      => $aufgabe->titel . ($aufgabe->beschreibung ? ': ' . $aufgabe->beschreibung : ''),
+                'stunden'           => $aufgabe->stunden,
+                'stunden_abziehen_bei' => $aufgabe->stunden_abziehen_bei,
             ]);
 
             // Nur fertige Aufgaben archivieren
@@ -202,17 +203,58 @@ class WochenberichtController extends Controller
         $user = auth()->user();
         $bericht = Wochenbericht::where('azubi_id', $user->id)->with('eintraege')->findOrFail($id);
 
-        $eintraege = [
-            'betrieb'      => $bericht->eintraege->filter(fn($e) => $e->kategorie === 'betrieb')->values(),
-            'unterweisung' => $bericht->eintraege->filter(fn($e) => $e->kategorie === 'unterweisung')->values(),
-            'berufsschule' => $bericht->eintraege->filter(fn($e) => $e->kategorie === 'berufsschule')->values(),
-        ];
+        // StundenConfig für Max-Werte — muss vor if/else stehen
+        $config          = \App\Models\StundenConfig::where('azubi_id', $user->id)->first();
+        $maxBetrieb      = $config ? $config->betrieb_stunden     : 32;
+        $maxBerufsschule = $config ? $config->berufsschule_stunden : 10;
 
-        $stunden = [
-            'betrieb'      => $bericht->eintraege->where('kategorie', 'betrieb')->sum('stunden'),
-            'unterweisung' => $bericht->eintraege->where('kategorie', 'unterweisung')->sum('stunden'),
-            'berufsschule' => $bericht->eintraege->where('kategorie', 'berufsschule')->sum('stunden'),
-        ];
+        if (!$bericht->abgegeben) {
+            // Noch nicht abgegeben: live Aufgaben verwenden
+            $aufgaben = Aufgabe::where('azubi_id', $user->id)
+                ->where('archiviert', false)
+                ->whereIn('status', ['in_bearbeitung', 'fertig'])
+                ->get();
+
+            $eintraege = [
+                'betrieb'      => $aufgaben->filter(fn($a) => $a->kategorie === 'betrieb')->map(fn($a) => (object)[
+                    'beschreibung' => $a->titel . ($a->beschreibung ? ': ' . $a->beschreibung : ''),
+                    'stunden'      => $a->stunden,
+                ])->values(),
+                'unterweisung' => $aufgaben->filter(fn($a) => $a->kategorie === 'unterweisung')->map(fn($a) => (object)[
+                    'beschreibung' => $a->titel . ($a->beschreibung ? ': ' . $a->beschreibung : ''),
+                    'stunden'      => $a->stunden,
+                ])->values(),
+                'berufsschule' => $aufgaben->filter(fn($a) => $a->kategorie === 'berufsschule')->map(fn($a) => (object)[
+                    'beschreibung' => $a->titel . ($a->beschreibung ? ': ' . $a->beschreibung : ''),
+                    'stunden'      => $a->stunden,
+                ])->values(),
+            ];
+
+            $abzugBetrieb      = $aufgaben->filter(fn($a) => $a->kategorie === 'unterweisung' && $a->stunden_abziehen_bei === 'betrieb')->sum('stunden');
+            $abzugBerufsschule = $aufgaben->filter(fn($a) => $a->kategorie === 'unterweisung' && $a->stunden_abziehen_bei === 'berufsschule')->sum('stunden');
+
+            $stunden = [
+                'betrieb'      => max(0, $maxBetrieb - $abzugBetrieb),
+                'unterweisung' => $aufgaben->filter(fn($a) => $a->kategorie === 'unterweisung')->sum('stunden'),
+                'berufsschule' => max(0, $maxBerufsschule - $abzugBerufsschule),
+            ];
+        } else {
+            // Abgegeben: gespeicherte Einträge verwenden
+            $eintraege = [
+                'betrieb'      => $bericht->eintraege->filter(fn($e) => $e->kategorie === 'betrieb')->values(),
+                'unterweisung' => $bericht->eintraege->filter(fn($e) => $e->kategorie === 'unterweisung')->values(),
+                'berufsschule' => $bericht->eintraege->filter(fn($e) => $e->kategorie === 'berufsschule')->values(),
+            ];
+
+            $abzugBetrieb      = $bericht->eintraege->filter(fn($e) => $e->kategorie === 'unterweisung' && $e->stunden_abziehen_bei === 'betrieb')->sum('stunden');
+            $abzugBerufsschule = $bericht->eintraege->filter(fn($e) => $e->kategorie === 'unterweisung' && $e->stunden_abziehen_bei === 'berufsschule')->sum('stunden');
+
+            $stunden = [
+                'betrieb'      => max(0, $maxBetrieb - $abzugBetrieb),
+                'unterweisung' => $bericht->eintraege->filter(fn($e) => $e->kategorie === 'unterweisung')->sum('stunden'),
+                'berufsschule' => max(0, $maxBerufsschule - $abzugBerufsschule),
+            ];
+        }
 
         $beginn = $user->ausbildungsbeginn ? \Carbon\Carbon::parse($user->ausbildungsbeginn) : null;
         $ausbildungsjahr = $beginn
@@ -260,22 +302,29 @@ class WochenberichtController extends Controller
 
         $beginn = $user->ausbildungsbeginn ? \Carbon\Carbon::parse($user->ausbildungsbeginn) : null;
 
-        $berichteDaten = $berichte->map(function ($bericht) use ($user, $beginn) {
+        $config = \App\Models\StundenConfig::where('azubi_id', $user->id)->first();
+        $maxBetrieb      = $config ? $config->betrieb_stunden      : 32;
+        $maxBerufsschule = $config ? $config->berufsschule_stunden  : 10;
+
+        $berichteDaten = $berichte->map(function ($bericht) use ($user, $beginn, $maxBetrieb, $maxBerufsschule) {
             $ausbildungsjahr = $beginn
                 ? (int) floor($beginn->diffInMonths($bericht->startdatum) / 12) + 1
                 : '?';
 
+            $abzugBetrieb      = $bericht->eintraege->filter(fn($e) => $e->kategorie === 'unterweisung' && $e->stunden_abziehen_bei === 'betrieb')->sum('stunden');
+            $abzugBerufsschule = $bericht->eintraege->filter(fn($e) => $e->kategorie === 'unterweisung' && $e->stunden_abziehen_bei === 'berufsschule')->sum('stunden');
+
             return [
                 'bericht'         => $bericht,
                 'eintraege'       => [
-                    'betrieb'      => $bericht->eintraege->where('kategorie', 'betrieb'),
-                    'unterweisung' => $bericht->eintraege->where('kategorie', 'unterweisung'),
-                    'berufsschule' => $bericht->eintraege->where('kategorie', 'berufsschule'),
+                    'betrieb'      => $bericht->eintraege->filter(fn($e) => $e->kategorie === 'betrieb'),
+                    'unterweisung' => $bericht->eintraege->filter(fn($e) => $e->kategorie === 'unterweisung'),
+                    'berufsschule' => $bericht->eintraege->filter(fn($e) => $e->kategorie === 'berufsschule'),
                 ],
                 'stunden'         => [
-                    'betrieb'      => $bericht->eintraege->where('kategorie', 'betrieb')->sum('stunden'),
-                    'unterweisung' => $bericht->eintraege->where('kategorie', 'unterweisung')->sum('stunden'),
-                    'berufsschule' => $bericht->eintraege->where('kategorie', 'berufsschule')->sum('stunden'),
+                    'betrieb'      => max(0, $maxBetrieb - $abzugBetrieb),
+                    'unterweisung' => $bericht->eintraege->filter(fn($e) => $e->kategorie === 'unterweisung')->sum('stunden'),
+                    'berufsschule' => max(0, $maxBerufsschule - $abzugBerufsschule),
                 ],
                 'azubi'           => $user,
                 'ausbildungsjahr' => $ausbildungsjahr,

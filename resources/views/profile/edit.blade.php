@@ -512,10 +512,6 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             Passwort
         </a>
-        <a href="#sec-settings" class="profil-subnav-item" data-section="sec-settings">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06-.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-            Einstellungen
-        </a>
         <a href="#sec-sig" class="profil-subnav-item" data-section="sec-sig">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 17l4-8 4 4 4-6 4 10"/></svg>
             Meine Signatur
@@ -532,7 +528,12 @@
             </div>
             <div>
                 <h1>{{ auth()->user()->full_name }}</h1>
-                <p>{{ auth()->user()->abteilung ?? 'Keine Abteilung' }} · <span>{{ ucfirst(auth()->user()->rolle) }}</span></p>
+                <p>
+                    @if(auth()->user()->rolle === 'azubi')
+                        {{ auth()->user()->klasse?->abteilung?->name ?? 'Keine Abteilung' }} ·
+                    @endif
+                    <span>{{ ucfirst(auth()->user()->rolle) }}</span>
+                </p>
             </div>
         </div>
 
@@ -625,12 +626,12 @@
                             <label>Rolle</label>
                             <input type="text" value="{{ ucfirst(auth()->user()->rolle) }}" readonly/>
                         </div>
+                        @if(auth()->user()->rolle === 'azubi')
                         <div class="profil-field">
-                            <label for="abteilung">Abteilung</label>
-                            <input type="text" id="abteilung" name="abteilung"
-                                   value="{{ old('abteilung', auth()->user()->abteilung) }}"
-                                   placeholder="z.B. IT Anwendungsentwicklung"/>
+                            <label>Abteilung</label>
+                            <input type="text" value="{{ auth()->user()->klasse?->abteilung?->name ?? '—' }}" readonly/>
                         </div>
+                        @endif
                     </div>
 
                     <div class="profil-footer-actions">
@@ -701,52 +702,6 @@
                     <div class="profil-footer-actions">
                         <button type="submit" class="profil-btn profil-btn-primary">
                             Passwort ändern
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </section>
-
-        {{-- ── SECTION: EINSTELLUNGEN ── --}}
-        <section class="profil-card" id="sec-settings">
-            <div class="profil-card-header">
-                <div class="profil-card-icon">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--p-blue)" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06-.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                </div>
-                <div class="profil-card-header-text">
-                    <h2>Einstellungen</h2>
-                    <p>Erscheinungsbild & Präferenzen</p>
-                </div>
-            </div>
-            <div class="profil-card-body">
-                <form method="POST" action="{{ route('profile.update') }}">
-                    @csrf
-                    @method('PATCH')
-                    {{-- Pass through existing values so profile.update doesn't wipe them --}}
-                    <input type="hidden" name="vorname"           value="{{ auth()->user()->vorname }}">
-                    <input type="hidden" name="nachname"          value="{{ auth()->user()->nachname }}">
-                    <input type="hidden" name="email"             value="{{ auth()->user()->email }}">
-                    <input type="hidden" name="abteilung"         value="{{ auth()->user()->abteilung }}">
-                    <input type="hidden" name="ausbildungsbeginn" value="{{ auth()->user()->ausbildungsbeginn?->format('Y-m-d') }}">
-                    <input type="hidden" name="ausbildungsende"   value="{{ auth()->user()->ausbildungsende?->format('Y-m-d') }}">
-                    {{-- dark_mode is only sent when checkbox is checked; backend uses boolean() which defaults to false --}}
-
-                    <div class="profil-toggle-row">
-                        <label class="profil-toggle-wrap">
-                            <input type="checkbox" name="dark_mode" id="dark_mode_toggle"
-                                   {{ auth()->user()->dark_mode ? 'checked' : '' }}
-                                   onchange="danToggleDarkMode(this.checked)"/>
-                            <div class="profil-toggle-slider"></div>
-                        </label>
-                        <div>
-                            <div class="profil-toggle-label">Dark Mode</div>
-                            <div class="profil-toggle-sub">Dunkles Farbschema aktivieren</div>
-                        </div>
-                    </div>
-
-                    <div class="profil-footer-actions" style="padding-top:0">
-                        <button type="submit" class="profil-btn profil-btn-primary">
-                            Einstellungen speichern
                         </button>
                     </div>
                 </form>
@@ -868,17 +823,6 @@
 </div>
 
 <script>
-    /* ── Dark mode toggle (instant, form submit syncs to DB) ── */
-    function danToggleDarkMode(on) {
-        document.documentElement.setAttribute('data-theme', on ? 'dark' : '');
-    }
-    // Apply on page load from user preference
-    document.addEventListener('DOMContentLoaded', function() {
-        @if (auth()->user()->dark_mode)
-            document.documentElement.setAttribute('data-theme', 'dark');
-        @endif
-    });
-
     /* ── Password strength indicator ── */
     function danPwStrength(v) {
         const bars = ['pb1','pb2','pb3','pb4'].map(id => document.getElementById(id));
@@ -981,7 +925,7 @@
     }
 
     /* ── Subnav active state on scroll ── */
-    const danSections = ['sec-personal','sec-pw','sec-settings','sec-sig'];
+    const danSections = ['sec-personal','sec-pw','sec-sig'];
     const danNavItems = document.querySelectorAll('.profil-subnav-item[data-section]');
 
     function danUpdateNav() {

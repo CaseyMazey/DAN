@@ -161,37 +161,45 @@ class AufgabeController extends Controller
         $vorwocheStart = Carbon::now()->subWeek()->startOfWeek()->toDateString();
         $vorwocheEnde  = Carbon::now()->subWeek()->endOfWeek()->subDays(2)->toDateString();
 
-        $fertigeAufgaben = Aufgabe::where('azubi_id', $user->id)
-            ->where('status', 'fertig')
+        $aufgaben = Aufgabe::where('azubi_id', $user->id)
+            ->whereIn('status', ['in_bearbeitung', 'fertig'])
             ->where('archiviert', false)
-            ->where('updated_at', '<=', Carbon::now()->startOfWeek())
             ->get();
 
-        if ($fertigeAufgaben->isEmpty()) return;
+        if ($aufgaben->isEmpty()) return;
 
         $bericht = Wochenbericht::firstOrCreate(
             ['azubi_id' => $user->id, 'startdatum' => $vorwocheStart],
             ['enddatum' => $vorwocheEnde]
         );
 
-        foreach ($fertigeAufgaben as $aufgabe) {
+        foreach ($aufgaben as $aufgabe) {
             if (!$aufgabe->in_wochenbericht) {
-                $kategorie = $aufgabe->kategorie === 'unterweisung'
-                    ? 'unterweisung'
-                    : $aufgabe->kategorie;
-
                 WochenberichtEintrag::create([
-                    'wochenbericht_id' => $bericht->id,
-                    'kategorie'        => $kategorie,
-                    'beschreibung'     => $aufgabe->titel . ($aufgabe->beschreibung ? ': ' . $aufgabe->beschreibung : ''),
-                    'stunden'          => $aufgabe->stunden,
+                    'wochenbericht_id'     => $bericht->id,
+                    'kategorie'            => $aufgabe->kategorie,
+                    'beschreibung'         => $aufgabe->titel . ($aufgabe->beschreibung ? ': ' . $aufgabe->beschreibung : ''),
+                    'stunden'              => $aufgabe->stunden,
+                    'stunden_abziehen_bei' => $aufgabe->stunden_abziehen_bei,
                 ]);
             }
 
-            $aufgabe->update([
-                'in_wochenbericht' => true,
-                'archiviert'       => true,
-                'archiviert_am'    => now(),
+            if ($aufgabe->status === 'fertig') {
+                $aufgabe->update([
+                    'in_wochenbericht' => true,
+                    'archiviert'       => true,
+                    'archiviert_am'    => now(),
+                ]);
+            } else {
+                $aufgabe->update(['in_wochenbericht' => true]);
+            }
+        }
+
+        if (!$bericht->abgegeben) {
+            $bericht->update([
+                'abgegeben'        => true,
+                'abgegeben_am'     => now(),
+                'auto_abgeschickt' => true,
             ]);
         }
     }

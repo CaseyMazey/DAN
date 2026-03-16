@@ -8,7 +8,7 @@ class Klasse extends Model
 {
     protected $table = 'klassen';
 
-    protected $fillable = ['name', 'jahrgang', 'aktiv'];
+    protected $fillable = ['name', 'jahrgang', 'aktiv', 'abteilung_id'];
 
     protected $casts = [
         'aktiv' => 'boolean',
@@ -22,5 +22,10 @@ class Klasse extends Model
     public function ausbilder()
     {
         return $this->belongsToMany(User::class, 'ausbilder_klassen', 'klasse_id', 'user_id');
+    }
+
+    public function abteilung()
+    {
+        return $this->belongsTo(Abteilung::class);
     }
 }
