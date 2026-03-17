@@ -44,12 +44,20 @@ class DashboardController extends Controller
                 ->where('signiert', false)
                 ->count();
 
+            $berichtStats = [
+                'gesamt'     => Wochenbericht::where('azubi_id', $user->id)->count(),
+                'signiert'   => Wochenbericht::where('azubi_id', $user->id)->where('signiert', true)->count(),
+                'ausstehend' => Wochenbericht::where('azubi_id', $user->id)->where('azubi_signiert', true)->where('signiert', false)->count(),
+                'bearbeitet' => Wochenbericht::where('azubi_id', $user->id)->where('bearbeitet', true)->count(),
+            ];
+
             return view('dashboard.azubi', compact(
                 'aufgabenStats',
                 'stundenDieseWoche',
                 'naechsteTermine',
                 'nichtSigniert',
-                'ausstehendAusbilder'
+                'ausstehendAusbilder',
+                'berichtStats'
             ));
         }
 

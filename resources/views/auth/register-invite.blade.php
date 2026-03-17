@@ -3,87 +3,223 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registrierung — DAN 2.0</title>
+    <title>Konto erstellen — DAN</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <script>(function(){if(localStorage.getItem('dan_dark')==='1')document.documentElement.setAttribute('data-theme','dark');})();</script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
+        :root {
+            --p-bg:#F4F7FB;--p-surface:#fff;--p-border:#E2E8F0;--p-text:#1A2233;--p-muted:#64748B;--p-subtle:#94A3B8;
+            --p-blue:#2563EB;--p-blue-bg:#EEF3FF;--p-red:#DC2626;--p-red-bg:#FEE2E2;
+            --p-green:#16A34A;--p-green-bg:#DCFCE7;
+            --p-radius:12px;--p-rsm:8px;--p-font:'DM Sans',system-ui,sans-serif;
+        }
+        html[data-theme="dark"] {
+            --p-bg:#0D1117;--p-surface:#161B22;--p-border:#30363D;--p-text:#E6EDF3;--p-muted:#8B949E;--p-subtle:#484F58;
+            --p-blue:#58A6FF;--p-blue-bg:#0D2340;--p-red:#F85149;--p-red-bg:#2D0A0A;
+            --p-green:#3FB950;--p-green-bg:#0A2918;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; background: var(--p-bg); color: var(--p-text); font-family: var(--p-font); }
+
+        .page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 16px;
+        }
+
+        .card {
+            background: var(--p-surface);
+            border: 1px solid var(--p-border);
+            border-radius: var(--p-radius);
+            width: 100%;
+            max-width: 460px;
+            overflow: hidden;
+        }
+
+        /* Logo bar */
+        .logo-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 20px 28px 18px;
+            border-bottom: 1px solid var(--p-border);
+        }
+        .logo-mark {
+            width: 34px; height: 34px;
+            background: var(--p-blue);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .logo-mark svg { color: #fff; }
+        .logo-text { line-height: 1.2; }
+        .logo-name { font-size: 14px; font-weight: 700; color: var(--p-text); letter-spacing: -.2px; }
+        .logo-sub  { font-size: 11px; font-weight: 500; color: var(--p-muted); text-transform: uppercase; letter-spacing: .6px; }
+
+        /* Invite banner */
+        .invite-banner {
+            margin: 20px 28px 0;
+            padding: 12px 14px;
+            background: var(--p-blue-bg);
+            border: 1px solid var(--p-blue);
+            border-radius: var(--p-rsm);
+            font-size: 13px;
+            color: var(--p-text);
+            line-height: 1.5;
+        }
+        .invite-banner strong { color: var(--p-blue); }
+        .invite-email {
+            display: inline-flex; align-items: center; gap: 5px;
+            margin-top: 6px; font-size: 12px; color: var(--p-muted);
+        }
+
+        /* Error box */
+        .error-box {
+            margin: 16px 28px 0;
+            padding: 11px 14px;
+            background: var(--p-red-bg);
+            border: 1px solid var(--p-red);
+            border-radius: var(--p-rsm);
+            font-size: 13px;
+            color: var(--p-red);
+        }
+        .error-box p + p { margin-top: 4px; }
+
+        /* Form */
+        .form-body { padding: 20px 28px 24px; display: flex; flex-direction: column; gap: 14px; }
+
+        .field-label {
+            font-size: 12px; font-weight: 600; color: var(--p-muted);
+            text-transform: uppercase; letter-spacing: .4px; margin-bottom: 5px;
+        }
+        .fi {
+            background: var(--p-bg); border: 1px solid var(--p-border);
+            border-radius: var(--p-rsm); padding: 9px 12px;
+            font-size: 14px; color: var(--p-text); font-family: var(--p-font);
+            outline: none; transition: border-color .12s; width: 100%;
+        }
+        .fi:focus { border-color: var(--p-blue); }
+        input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity: .5; }
+        html[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1) brightness(2); opacity: 1; }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        @media(max-width:420px) { .grid-2 { grid-template-columns: 1fr; } }
+
+        .divider {
+            height: 1px; background: var(--p-border); margin: 2px 0;
+        }
+        .section-title {
+            font-size: 11px; font-weight: 600; text-transform: uppercase;
+            letter-spacing: .5px; color: var(--p-subtle);
+        }
+
+        .btn-submit {
+            width: 100%; padding: 11px;
+            background: var(--p-blue); color: #fff;
+            border: none; border-radius: var(--p-rsm);
+            font-size: 14px; font-weight: 600; font-family: var(--p-font);
+            cursor: pointer; transition: opacity .15s; letter-spacing: -.1px;
+        }
+        .btn-submit:hover { opacity: .88; }
+
+        .footer-note {
+            text-align: center; font-size: 12.5px; color: var(--p-subtle);
+            padding: 0 28px 20px;
+        }
+        .footer-note a { color: var(--p-blue); text-decoration: none; font-weight: 500; }
+        .footer-note a:hover { text-decoration: underline; }
+    </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+<body>
+<div class="page">
+    <div class="card">
 
-    <div class="w-full max-w-md bg-white rounded-lg shadow p-8">
-
-        <div class="text-center mb-6">
-            <h1 class="text-2xl font-bold text-gray-800">DAN 2.0</h1>
-            <p class="text-sm text-gray-500 mt-1">Konto erstellen</p>
+        {{-- Logo --}}
+        <div class="logo-bar">
+            <div class="logo-mark">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <div class="logo-text">
+                <div class="logo-name">DAN</div>
+                <div class="logo-sub">Ausbildungsnachweis</div>
+            </div>
         </div>
 
-        <div class="mb-6 p-3 bg-blue-50 border border-blue-100 rounded text-sm text-blue-700">
-            Du wurdest als <strong>{{ ucfirst($einladung->rolle) }}</strong> eingeladen
-            @if($einladung->klasse)
-                in Klasse <strong>{{ $einladung->klasse->name }}</strong>
-            @endif
-            — Konto für <strong>{{ $einladung->email }}</strong>
+        {{-- Invite info --}}
+        <div class="invite-banner">
+            Du wurdest als <strong>{{ ucfirst($einladung->rolle) }}</strong>
+            @if($einladung->klasse) in Klasse <strong>{{ $einladung->klasse->name }}</strong>@endif
+            eingeladen.
+            <div class="invite-email">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg>
+                {{ $einladung->email }}
+            </div>
         </div>
 
+        {{-- Errors --}}
         @if($errors->any())
-            <div class="mb-4 p-3 bg-red-50 border border-red-100 rounded text-sm text-red-700">
+            <div class="error-box">
                 @foreach($errors->all() as $error)
                     <p>{{ $error }}</p>
                 @endforeach
             </div>
         @endif
 
-        <form method="POST" action="{{ route('register.invite.submit', $token) }}" class="space-y-4">
+        {{-- Form --}}
+        <form method="POST" action="{{ route('register.invite.submit', $token) }}">
             @csrf
+            <div class="form-body">
 
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Vorname</label>
-                    <input type="text" name="vorname" value="{{ old('vorname') }}" required
-                        class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nachname</label>
-                    <input type="text" name="nachname" value="{{ old('nachname') }}" required
-                        class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Passwort</label>
-                <input type="password" name="password" required minlength="8"
-                    class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Passwort bestätigen</label>
-                <input type="password" name="password_confirmation" required
-                    class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-            </div>
-
-            @if($einladung->rolle === 'azubi')
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid-2">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Ausbildungsbeginn</label>
-                        <input type="date" name="ausbildungsbeginn" value="{{ old('ausbildungsbeginn') }}"
-                            class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <div class="field-label">Vorname</div>
+                        <input type="text" name="vorname" class="fi" value="{{ old('vorname') }}" required autofocus placeholder="Max">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Ausbildungsende</label>
-                        <input type="date" name="ausbildungsende" value="{{ old('ausbildungsende') }}"
-                            class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <div class="field-label">Nachname</div>
+                        <input type="text" name="nachname" class="fi" value="{{ old('nachname') }}" required placeholder="Mustermann">
                     </div>
                 </div>
-            @endif
 
-            <button type="submit"
-                class="w-full py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700">
-                Konto erstellen
-            </button>
+                <div>
+                    <div class="field-label">Passwort</div>
+                    <input type="password" name="password" class="fi" required minlength="8" placeholder="Mindestens 8 Zeichen">
+                </div>
+
+                <div>
+                    <div class="field-label">Passwort bestätigen</div>
+                    <input type="password" name="password_confirmation" class="fi" required placeholder="Passwort wiederholen">
+                </div>
+
+                @if($einladung->rolle === 'azubi')
+                    <div class="divider"></div>
+                    <div class="section-title">Ausbildungszeitraum</div>
+                    <div class="grid-2">
+                        <div>
+                            <div class="field-label">Beginn</div>
+                            <input type="date" name="ausbildungsbeginn" class="fi" value="{{ old('ausbildungsbeginn') }}">
+                        </div>
+                        <div>
+                            <div class="field-label">Ende</div>
+                            <input type="date" name="ausbildungsende" class="fi" value="{{ old('ausbildungsende') }}">
+                        </div>
+                    </div>
+                @endif
+
+                <button type="submit" class="btn-submit">Konto erstellen</button>
+            </div>
         </form>
 
-        <p class="text-center text-xs text-gray-400 mt-4">
-            Bereits ein Konto? <a href="{{ route('login') }}" class="text-blue-600 hover:underline">Anmelden</a>
-        </p>
-    </div>
+        <div class="footer-note">
+            Bereits ein Konto? <a href="{{ route('login') }}">Anmelden</a>
+        </div>
 
+    </div>
+</div>
 </body>
 </html>

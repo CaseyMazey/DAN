@@ -121,6 +121,50 @@ class AusbilderController extends Controller
         return back()->with('success', "{$azubi->full_name} wurde aus der Klasse entfernt.");
     }
 
+    // ─── Azubi Profil (Übersicht für Ausbilder) ───────────────
+
+    public function azubiProfil($azubiId)
+    {
+        $user = auth()->user();
+
+        $azubi = User::findOrFail($azubiId);
+
+        if ($user->rolle !== 'admin') {
+            $azubiIds = $user->klassen()->with('azubis')->get()
+                ->flatMap(fn($k) => $k->azubis->pluck('id'));
+            if (!$azubiIds->contains($azubiId)) abort(403);
+        }
+
+        // Noten aus Kalendereinträgen
+        $kalenderEintraege = \App\Models\KalenderEintrag::where('azubi_id', $azubiId)
+            ->whereNotNull('note')
+            ->orderBy('datum', 'desc')
+            ->get();
+
+        $notenProFach = $kalenderEintraege->groupBy('fach')->map(function ($eintraege) {
+            return [
+                'eintraege'    => $eintraege,
+                'durchschnitt' => round($eintraege->avg('note'), 2),
+            ];
+        });
+
+        // Bericht-Statistiken
+        $berichte = Wochenbericht::where('azubi_id', $azubiId)
+            ->orderBy('startdatum', 'desc')
+            ->get();
+
+        $stats = [
+            'gesamt'     => $berichte->count(),
+            'signiert'   => $berichte->where('signiert', true)->count(),
+            'bearbeitet' => $berichte->where('bearbeitet', true)->count(),
+            'ausstehend' => $berichte->where('signiert', false)->where('abgegeben', true)->count(),
+        ];
+
+        $jahre = $berichte->map(fn($b) => $b->startdatum->year)->unique()->sortDesc()->values();
+
+        return view('ausbilder.azubi_profil', compact('azubi', 'notenProFach', 'berichte', 'stats', 'jahre'));
+    }
+
     // ─── Berichte eines Azubis ────────────────────────────────
 
     public function azubiBerichte($azubiId)
@@ -128,14 +172,17 @@ class AusbilderController extends Controller
         $user = auth()->user();
 
         // Prüfen ob dieser Azubi in einer eigenen Klasse ist
-        $azubiIds = $user->klassen()->with('azubis')->get()
-            ->flatMap(fn($k) => $k->azubis->pluck('id'));
-
-        if (!$azubiIds->contains($azubiId)) {
-            abort(403);
-        }
-
         $azubi = User::findOrFail($azubiId);
+
+        // Admins haben Zugriff auf alle Azubis, Ausbilder nur auf ihre eigenen Klassen
+        if ($user->rolle !== 'admin') {
+            $azubiIds = $user->klassen()->with('azubis')->get()
+                ->flatMap(fn($k) => $k->azubis->pluck('id'));
+
+            if (!$azubiIds->contains($azubiId)) {
+                abort(403);
+            }
+        }
         $berichte = Wochenbericht::where('azubi_id', $azubiId)
             ->orderBy('startdatum', 'desc')
             ->get();
@@ -149,14 +196,13 @@ class AusbilderController extends Controller
     {
         $user = auth()->user();
 
-        $azubiIds = $user->klassen()->with('azubis')->get()
-            ->flatMap(fn($k) => $k->azubis->pluck('id'));
-
         $bericht = Wochenbericht::with(['eintraege', 'kommentare.autor', 'bearbeitungen.autor', 'azubi'])
             ->findOrFail($id);
 
-        if (!$azubiIds->contains($bericht->azubi_id)) {
-            abort(403);
+        if ($user->rolle !== 'admin') {
+            $azubiIds = $user->klassen()->with('azubis')->get()
+                ->flatMap(fn($k) => $k->azubis->pluck('id'));
+            if (!$azubiIds->contains($bericht->azubi_id)) abort(403);
         }
 
         $eintraege = $bericht->eintraege->groupBy('kategorie');
@@ -168,13 +214,12 @@ class AusbilderController extends Controller
     {
         $user = auth()->user();
 
-        $azubiIds = $user->klassen()->with('azubis')->get()
-            ->flatMap(fn($k) => $k->azubis->pluck('id'));
-
         $bericht = Wochenbericht::findOrFail($id);
 
-        if (!$azubiIds->contains($bericht->azubi_id)) {
-            abort(403);
+        if ($user->rolle !== 'admin') {
+            $azubiIds = $user->klassen()->with('azubis')->get()
+                ->flatMap(fn($k) => $k->azubis->pluck('id'));
+            if (!$azubiIds->contains($bericht->azubi_id)) abort(403);
         }
 
         $bericht->update([
@@ -186,17 +231,64 @@ class AusbilderController extends Controller
         return back()->with('success', 'Bericht signiert und gesperrt.');
     }
 
+    public function berichtPdf($id)
+    {
+        $user = auth()->user();
+
+        $bericht = Wochenbericht::with(['eintraege', 'azubi'])->findOrFail($id);
+
+        if ($user->rolle !== 'admin') {
+            $azubiIds = $user->klassen()->with('azubis')->get()
+                ->flatMap(fn($k) => $k->azubis->pluck('id'));
+            if (!$azubiIds->contains($bericht->azubi_id)) abort(403);
+        }
+
+        $azubi  = $bericht->azubi;
+        $config = \App\Models\StundenConfig::where('azubi_id', $azubi->id)->first();
+        $maxBetrieb      = $config ? $config->betrieb_stunden      : 32;
+        $maxBerufsschule = $config ? $config->berufsschule_stunden  : 10;
+
+        $eintraege = [
+            'betrieb'      => $bericht->eintraege->filter(fn($e) => $e->kategorie === 'betrieb')->values(),
+            'unterweisung' => $bericht->eintraege->filter(fn($e) => $e->kategorie === 'unterweisung')->values(),
+            'berufsschule' => $bericht->eintraege->filter(fn($e) => $e->kategorie === 'berufsschule')->values(),
+        ];
+
+        $abzugBetrieb      = $bericht->eintraege->filter(fn($e) => $e->kategorie === 'unterweisung' && $e->stunden_abziehen_bei === 'betrieb')->sum('stunden');
+        $abzugBerufsschule = $bericht->eintraege->filter(fn($e) => $e->kategorie === 'unterweisung' && $e->stunden_abziehen_bei === 'berufsschule')->sum('stunden');
+
+        $stunden = [
+            'betrieb'      => max(0, $maxBetrieb - $abzugBetrieb),
+            'unterweisung' => $bericht->eintraege->filter(fn($e) => $e->kategorie === 'unterweisung')->sum('stunden'),
+            'berufsschule' => max(0, $maxBerufsschule - $abzugBerufsschule),
+        ];
+
+        $beginn = $azubi->ausbildungsbeginn ? \Carbon\Carbon::parse($azubi->ausbildungsbeginn) : null;
+        $ausbildungsjahr = $beginn
+            ? (int) floor($beginn->diffInMonths($bericht->startdatum) / 12) + 1
+            : '?';
+
+        $service = new \App\Services\WochenberichtPdfService();
+        $pdfContent = $service->generate($bericht, $azubi, $ausbildungsjahr, $eintraege, $stunden);
+
+        $dateiname = 'Wochenbericht_KW' . $bericht->startdatum->format('W_Y') . '_' . $azubi->nachname . '.pdf';
+
+        return response($pdfContent, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $dateiname . '"',
+        ]);
+    }
+
     public function berichtKommentieren(Request $request, $id)
     {
         $user = auth()->user();
 
-        $azubiIds = $user->klassen()->with('azubis')->get()
-            ->flatMap(fn($k) => $k->azubis->pluck('id'));
-
         $bericht = Wochenbericht::findOrFail($id);
 
-        if (!$azubiIds->contains($bericht->azubi_id)) {
-            abort(403);
+        if ($user->rolle !== 'admin') {
+            $azubiIds = $user->klassen()->with('azubis')->get()
+                ->flatMap(fn($k) => $k->azubis->pluck('id'));
+            if (!$azubiIds->contains($bericht->azubi_id)) abort(403);
         }
 
         $request->validate([

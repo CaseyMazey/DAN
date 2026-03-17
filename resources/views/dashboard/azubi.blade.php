@@ -253,6 +253,44 @@ body { font-family: var(--p-font); background: var(--p-bg); color: var(--p-text)
         </div>
     @endif
 
+    {{-- Bericht-Statistiken --}}
+    <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <span style="font-size:13px;font-weight:600;color:var(--p-muted);text-transform:uppercase;letter-spacing:.5px">Wochenberichte</span>
+            <a href="{{ route('wochenbericht.index') }}" class="card-link">Alle anzeigen →</a>
+        </div>
+        <div class="dash-grid-3" style="grid-template-columns:repeat(4,1fr)">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:var(--p-border)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--p-muted)" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                </div>
+                <div class="stat-number">{{ $berichtStats['gesamt'] }}</div>
+                <div class="stat-label">Berichte gesamt</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:var(--p-green-bg)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--p-green)" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <div class="stat-number" style="color:var(--p-green)">{{ $berichtStats['signiert'] }}</div>
+                <div class="stat-label">Signiert</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:var(--p-amber-bg)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--p-amber)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <div class="stat-number" style="color:var(--p-amber)">{{ $berichtStats['ausstehend'] }}</div>
+                <div class="stat-label">Warten auf Ausbilder</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:var(--p-red-bg)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--p-red)" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+                <div class="stat-number" style="color:var(--p-red)">{{ $berichtStats['bearbeitet'] }}</div>
+                <div class="stat-label">Nachträglich bearbeitet</div>
+            </div>
+        </div>
+    </div>
+
     {{-- Aufgaben Stats --}}
     <div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">

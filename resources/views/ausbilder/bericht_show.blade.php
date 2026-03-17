@@ -89,10 +89,17 @@ body{font-family:var(--p-font);background:var(--p-bg);color:var(--p-text)}
             </div>
             <div class="page-sub">{{ $bericht->azubi->full_name }} · {{ $bericht->startdatum->format('d.m.Y') }} – {{ $bericht->enddatum->format('d.m.Y') }}</div>
         </div>
-        <a href="{{ route('ausbilder.azubi.berichte', $bericht->azubi_id) }}" class="back-link">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-            Alle Berichte
-        </a>
+        <div style="display:flex;align-items:center;gap:10px">
+            <a href="{{ route('ausbilder.bericht.pdf', $bericht->id) }}"
+               class="btn btn-gray" style="font-size:12.5px;padding:6px 14px;text-decoration:none">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                PDF exportieren
+            </a>
+            <a href="{{ route('ausbilder.azubi.profil', $bericht->azubi_id) }}" class="back-link">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                Alle Berichte
+            </a>
+        </div>
     </div>
 
     {{-- Flash --}}
@@ -128,32 +135,97 @@ body{font-family:var(--p-font);background:var(--p-bg);color:var(--p-text)}
         </div>
     </div>
 
-    {{-- Einträge --}}
-    @foreach(['betrieb' => ['Betriebliche Tätigkeiten','#2563EB'], 'unterweisung' => ['Unterweisungen','#9333EA'], 'berufsschule' => ['Berufsschule','#0891B2']] as $key => [$label, $color])
-        <div class="card">
-            <div class="card-header">
-                <span class="card-title">
-                    <span style="width:8px;height:8px;border-radius:50%;background:{{ $color }};flex-shrink:0;display:inline-block"></span>
-                    {{ $label }}
-                </span>
-                @if(isset($eintraege[$key]))
-                    <span style="font-size:12.5px;color:var(--p-muted)">{{ $eintraege[$key]->sum('stunden') }} Std</span>
-                @endif
-            </div>
-            <div class="card-body">
+    {{-- IHK-Vorlage Style --}}
+    <div class="card">
+        {{-- Kopfdaten --}}
+        <div style="padding:20px 24px;border-bottom:1px solid var(--p-border)">
+            <table style="width:100%;border-collapse:collapse;font-size:13px">
+                <tr>
+                    <td style="padding:6px 10px;border:1px solid var(--p-border);color:var(--p-muted);width:220px">Name des/der Auszubildenden:</td>
+                    <td style="padding:6px 10px;border:1px solid var(--p-border);font-weight:500">{{ $bericht->azubi->full_name }}</td>
+                </tr>
+                <tr>
+                    <td style="padding:6px 10px;border:1px solid var(--p-border);color:var(--p-muted)">Ausbildungswoche vom:</td>
+                    <td style="padding:6px 10px;border:1px solid var(--p-border)">
+                        {{ $bericht->startdatum->format('d.m.Y') }}
+                        <span style="color:var(--p-muted);margin:0 8px">bis</span>
+                        {{ $bericht->enddatum->format('d.m.Y') }}
+                        <span style="color:var(--p-muted);margin-left:12px">KW {{ $bericht->startdatum->format('W / Y') }}</span>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        {{-- Sektionen als IHK-Tabellen --}}
+        @foreach([
+            'betrieb'      => 'Betriebliche Tätigkeiten',
+            'unterweisung' => 'Unterweisungen bzw. überbetriebliche Unterweisungen, betrieblicher Unterricht, sonstige Schulungen',
+            'berufsschule' => 'Themen des Berufsschulunterrichts',
+        ] as $key => $label)
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead>
+                <tr>
+                    <th style="padding:8px 14px;background:#E8EDF4;border:1px solid var(--p-border);text-align:left;font-weight:600;font-size:12.5px;color:var(--p-text)">
+                        {{ $label }}
+                    </th>
+                    <th style="padding:8px 14px;background:#E8EDF4;border:1px solid var(--p-border);text-align:right;font-style:italic;font-weight:400;font-size:12.5px;color:var(--p-muted);width:90px">
+                        Stunden
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
                 @if(isset($eintraege[$key]) && $eintraege[$key]->count())
                     @foreach($eintraege[$key] as $eintrag)
-                        <div class="eintrag-row">
-                            <span class="eintrag-desc">{{ $eintrag->beschreibung }}</span>
-                            <span class="eintrag-std">{{ $eintrag->stunden }} Std</span>
-                        </div>
+                        <tr>
+                            <td style="padding:7px 14px;border:1px solid var(--p-border);border-top:none;font-size:13px">{{ $eintrag->beschreibung }}</td>
+                            <td style="padding:7px 14px;border:1px solid var(--p-border);border-top:none;text-align:right;font-size:13px;color:var(--p-muted)">{{ number_format($eintrag->stunden, 2) }}</td>
+                        </tr>
                     @endforeach
+                    {{-- Summenzeile --}}
+                    <tr>
+                        <td style="padding:6px 14px;border:1px solid var(--p-border);border-top:none;text-align:right;font-size:12px;color:var(--p-muted)">Gesamt:</td>
+                        <td style="padding:6px 14px;border:1px solid var(--p-border);border-top:none;text-align:right;font-weight:600;font-size:13px">{{ number_format($eintraege[$key]->sum('stunden'), 2) }}</td>
+                    </tr>
                 @else
-                    <div class="no-entries">Keine Einträge.</div>
+                    <tr>
+                        <td colspan="2" style="padding:16px 14px;border:1px solid var(--p-border);border-top:none;color:var(--p-subtle);font-size:13px;height:60px;vertical-align:top"> </td>
+                    </tr>
                 @endif
+            </tbody>
+        </table>
+        @endforeach
+
+        {{-- Unterschriften --}}
+        <div style="padding:20px 24px;border-top:1px solid var(--p-border)">
+            <p style="font-size:12.5px;color:var(--p-muted);margin-bottom:20px">
+                Durch die nachfolgende Unterschrift wird die Richtigkeit und Vollständigkeit der obigen Angaben bestätigt.
+            </p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px">
+                {{-- Azubi Signatur --}}
+                <div>
+                    <div style="height:48px;display:flex;align-items:center;margin-bottom:6px">
+                        @if($bericht->azubi_signiert)
+                            <span class="pill pill-green">✓ Vom Azubi signiert {{ $bericht->azubi_signiert_am?->format('d.m.Y') }}</span>
+                        @else
+                            <div style="width:100%;border-bottom:1px solid var(--p-border)"></div>
+                        @endif
+                    </div>
+                    <div style="font-size:12px;color:var(--p-muted)">Datum, Unterschrift Auszubildende/r</div>
+                </div>
+                {{-- Ausbilder Signatur --}}
+                <div>
+                    <div style="height:48px;display:flex;align-items:center;margin-bottom:6px">
+                        @if($bericht->signiert)
+                            <span class="pill pill-green">✓ Vom Ausbilder signiert {{ $bericht->signiert_am?->format('d.m.Y') }}</span>
+                        @else
+                            <div style="width:100%;border-bottom:1px solid var(--p-border)"></div>
+                        @endif
+                    </div>
+                    <div style="font-size:12px;color:var(--p-muted)">Datum, Unterschrift Ausbildende/r oder Ausbilder/in</div>
+                </div>
             </div>
         </div>
-    @endforeach
+    </div>
 
     {{-- Bearbeitungshistorie --}}
     @if($bericht->bearbeitungen->count())

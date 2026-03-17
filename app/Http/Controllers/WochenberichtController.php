@@ -24,13 +24,13 @@ class WochenberichtController extends Controller
         $startDerWoche = \Carbon\Carbon::now()->startOfWeek()->toDateString();
         $aktuell = Wochenbericht::where('azubi_id', $user->id)
             ->where('startdatum', $startDerWoche)
-            ->with('eintraege')
+            ->with(['eintraege', 'bearbeitungen.autor'])
             ->first();
             
         // Vorschau: entweder gewählter Bericht oder aktueller
         if ($request->filled('vorschau')) {
             $vorschau = Wochenbericht::where('azubi_id', $user->id)
-                ->with('eintraege')
+                ->with(['eintraege', 'bearbeitungen.autor'])
                 ->findOrFail($request->vorschau);
         } else {
             $vorschau = $aktuell;
@@ -70,7 +70,7 @@ class WochenberichtController extends Controller
             $query->where('signiert', true);
         }
 
-        $vergangen = $query->limit(10)->get();
+        $vergangen = $query->get();
 
         $jahre = Wochenbericht::where('azubi_id', $user->id)
             ->selectRaw('YEAR(startdatum) as jahr')

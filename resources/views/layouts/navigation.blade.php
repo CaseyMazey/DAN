@@ -276,7 +276,34 @@
                 @endif
 
                 @if(auth()->user()->rolle === 'ausbilder')
-                    {{-- Ausbilder sehen Berichte über das Dashboard / Klassen-Ansicht --}}
+                    @php $navKlassen = auth()->user()->klassen ?? collect(); @endphp
+                    @if($navKlassen->count() === 1)
+                        <a href="{{ route('ausbilder.klasse.show', $navKlassen->first()->id) }}"
+                           class="dn-link {{ request()->routeIs('ausbilder.klasse.*') ? 'active' : '' }}">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                            {{ $navKlassen->first()->name }}
+                        </a>
+                    @elseif($navKlassen->count() > 1)
+                        <div class="dn-dd-wrap">
+                            <button class="dn-link {{ request()->routeIs('ausbilder.klasse.*') ? 'active' : '' }}"
+                                    onclick="dnToggle('klassenDd', this)">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                Klassen
+                                <svg class="dn-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                            </button>
+                            <div class="dn-dd dn-left" id="klassenDd">
+                                @foreach($navKlassen as $navKlasse)
+                                    <a href="{{ route('ausbilder.klasse.show', $navKlasse->id) }}" class="dn-dd-item">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                                        {{ $navKlasse->name }}
+                                        @if($navKlasse->jahrgang)
+                                            <span style="color:var(--nav-muted);font-size:11px;margin-left:auto">{{ $navKlasse->jahrgang }}</span>
+                                        @endif
+                                    </a>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
                 @endif
 
                 @if(auth()->user()->rolle === 'admin')
@@ -292,7 +319,7 @@
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                                 Nutzerverwaltung
                             </a>
-                            <a href="{{ route('admin.abteilungen') }}" class="dn-dd-item {{ request()->routeIs('admin.abteilungen*') ? 'active' : '' }}">
+                            <a href="{{ route('admin.abteilungen') }}" class="dn-dd-item">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
                                 Abteilungen
                             </a>
@@ -374,11 +401,27 @@
                 <a href="{{ route('kalender.index') }}" class="dn-link {{ request()->routeIs('kalender.*') ? 'active' : '' }}">Kalender</a>
             @endif
             @if(auth()->user()->rolle === 'ausbilder')
-                {{-- Ausbilder sehen Berichte über das Dashboard / Klassen-Ansicht --}}
+                @php $navKlassen = auth()->user()->klassen ?? collect(); @endphp
+                @if($navKlassen->count() === 1)
+                    <a href="{{ route('ausbilder.klasse.show', $navKlassen->first()->id) }}"
+                       class="dn-link {{ request()->routeIs('ausbilder.klasse.*') ? 'active' : '' }}">
+                        {{ $navKlassen->first()->name }}
+                    </a>
+                @elseif($navKlassen->count() > 1)
+                    @foreach($navKlassen as $navKlasse)
+                        <a href="{{ route('ausbilder.klasse.show', $navKlasse->id) }}"
+                           class="dn-link {{ request()->routeIs('ausbilder.klasse.*') ? 'active' : '' }}"
+                           style="padding-left:20px">
+                            {{ $navKlasse->name }}
+                            @if($navKlasse->jahrgang)
+                                <span style="color:var(--nav-muted);font-size:11px;margin-left:6px">{{ $navKlasse->jahrgang }}</span>
+                            @endif
+                        </a>
+                    @endforeach
+                @endif
             @endif
             @if(auth()->user()->rolle === 'admin')
                 <a href="{{ route('admin.nutzer') }}" class="dn-link">Nutzerverwaltung</a>
-                <a href="{{ route('admin.abteilungen') }}" class="dn-link">Abteilungen</a>
                 <a href="{{ route('admin.klassen') }}" class="dn-link">Klassen</a>
                 <a href="{{ route('admin.einladungen') }}" class="dn-link">Einladungen</a>
             @endif

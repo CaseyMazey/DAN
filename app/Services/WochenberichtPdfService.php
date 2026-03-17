@@ -7,6 +7,22 @@ use App\Models\Aufgabe;
 
 class WochenberichtPdfService
 {
+    public function generateMulti(array $berichteDaten): string
+    {
+        $pdf = new Fpdi();
+
+        foreach ($berichteDaten as $data) {
+            $pdf->AddPage('P', 'A4');
+            $pdf->setSourceFile(storage_path('app/vorlage_wochenbericht.pdf'));
+            $tplId = $pdf->importPage(1);
+            $pdf->useTemplate($tplId, 0, 0, 210, 297);
+
+            $this->fillPage($pdf, $data['bericht'], $data['azubi'], $data['ausbildungsjahr'], $data['eintraege'], $data['stunden']);
+        }
+
+        return $pdf->Output('S');
+    }
+
     public function generate($bericht, $azubi, $ausbildungsjahr, $eintraege, $stunden)
     {
         $pdf = new Fpdi();
@@ -15,6 +31,13 @@ class WochenberichtPdfService
         $tplId = $pdf->importPage(1);
         $pdf->useTemplate($tplId, 0, 0, 210, 297);
 
+        $this->fillPage($pdf, $bericht, $azubi, $ausbildungsjahr, $eintraege, $stunden);
+
+        return $pdf->Output('S');
+    }
+
+    private function fillPage($pdf, $bericht, $azubi, $ausbildungsjahr, $eintraege, $stunden): void
+    {
         $pdf->SetFont('Helvetica', '', 10);
 
         // Kopfdaten
@@ -41,12 +64,10 @@ class WochenberichtPdfService
         ];
 
         foreach ($sektionen as $key => $pos) {
-            // Stunden
             $pdf->SetFont('Helvetica', '', 10);
             $pdf->SetXY(180, $pos['stundenY']);
             $pdf->Write(0, number_format($stunden[$key], 2));
 
-            // Inhalt
             $pdf->SetFont('Helvetica', '', 9);
             $y = $pos['inhaltY'];
             foreach ($eintraege[$key] as $e) {
@@ -65,13 +86,6 @@ class WochenberichtPdfService
                 $pdf->Image($pfad, 27, 236, 60, 20, 'PNG');
             }
         }
-
-        // Ausbilder Signatur
-        if ($bericht->signiert) {
-            // Ausbilder-Objekt brauchen wir noch — kommt später
-        }
-
-        return $pdf->Output('S');
     }
 
     private function wrapText(string $text, int $maxChars): string

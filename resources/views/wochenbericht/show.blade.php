@@ -227,6 +227,29 @@ body{font-family:var(--p-font);background:var(--p-bg);color:var(--p-text)}
             @endif
         </div>
 
+        {{-- Bearbeitungskommentar einmalig --}}
+        @if(!$bericht->gesperrt && $bericht->abgegeben)
+            <div style="padding:16px 20px;border-top:1px solid var(--p-border)">
+                <div class="bearbeitungs-notice" style="margin-bottom:10px">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <div>Nachträgliche Bearbeitung — Pflichtkommentar erforderlich. Gilt für alle neuen Einträge.</div>
+                </div>
+                <form method="POST" action="{{ route('wochenbericht.bearbeitung.speichern', $bericht->id) }}">
+                    @csrf
+                    <textarea id="global-bearbeitungs-kommentar"
+                        name="bearbeitungs_kommentar"
+                        placeholder="Was wurde nachträglich geändert / ergänzt?"
+                        style="width:100%;background:var(--p-bg);border:1px solid var(--p-orange);border-radius:var(--p-rsm);padding:8px 12px;font-size:13px;color:var(--p-text);font-family:var(--p-font);outline:none;resize:vertical;min-height:56px;margin-bottom:10px"
+                        oninput="syncKommentar(this.value)"
+                        required></textarea>
+                    <button type="submit" class="btn" style="background:var(--p-orange-bg);color:var(--p-orange);border:1px solid var(--p-orange);font-size:12.5px;padding:7px 13px">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                        Kommentar speichern
+                    </button>
+                </form>
+            </div>
+        @endif
+
         {{-- ── Drei Kategorien ── --}}
         @foreach([
             'betrieb'      => ['label' => 'Betriebliche Tätigkeiten', 'icon' => '<path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>'],
@@ -262,27 +285,16 @@ body{font-family:var(--p-font);background:var(--p-bg);color:var(--p-text)}
                 {{-- Neuen Eintrag --}}
                 @if(!$bericht->gesperrt)
                     <div class="entry-form">
-                        @if($bericht->abgegeben)
-                            <div class="bearbeitungs-notice">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                                <div style="flex:1">
-                                    Nachträgliche Bearbeitung — Pflichtkommentar erforderlich.
-                                </div>
-                            </div>
-                        @endif
                         <form method="POST" action="{{ route('wochenbericht.speichern', $bericht->id) }}">
                             @csrf
                             <input type="hidden" name="kategorie" value="{{ $key }}">
+                            @if($bericht->abgegeben)
+                                <input type="hidden" name="bearbeitungs_kommentar" class="kommentar-sync" value="">
+                            @endif
                             <div class="form-row">
                                 <textarea name="beschreibung" placeholder="Was wurde gemacht?" required></textarea>
                                 <input type="number" name="stunden" step="0.5" min="0" max="99" placeholder="Std" required>
                             </div>
-                            @if($bericht->abgegeben)
-                                <textarea name="bearbeitungs_kommentar"
-                                    placeholder="Was wurde nachträglich geändert / ergänzt?"
-                                    style="width:100%;background:var(--p-bg);border:1px solid var(--p-orange);border-radius:var(--p-rsm);padding:8px 12px;font-size:13px;color:var(--p-text);font-family:var(--p-font);outline:none;resize:vertical;min-height:56px;margin-bottom:10px"
-                                    required></textarea>
-                            @endif
                             <button type="submit" class="btn btn-primary" style="font-size:12.5px;padding:7px 13px">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                 Eintrag hinzufügen
@@ -343,4 +355,9 @@ body{font-family:var(--p-font);background:var(--p-bg);color:var(--p-text)}
     @endif
 
 </div>
+<script>
+function syncKommentar(val) {
+    document.querySelectorAll('.kommentar-sync').forEach(input => input.value = val);
+}
+</script>
 </x-app-layout>

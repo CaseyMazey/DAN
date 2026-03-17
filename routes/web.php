@@ -26,13 +26,13 @@ Route::middleware(['auth', 'rolle:azubi'])->group(function () {
     Route::get('/wochenbericht/aktuell', [WochenberichtController::class, 'show'])->name('wochenbericht.aktuell');
     Route::get('/wochenbericht/{id}', [WochenberichtController::class, 'show'])->name('wochenbericht.show');
     Route::post('/wochenbericht/{id}/speichern', [WochenberichtController::class, 'speichern'])->name('wochenbericht.speichern');
+    Route::post('/wochenbericht/{id}/bearbeitung', [WochenberichtController::class, 'bearbeitungSpeichern'])->name('wochenbericht.bearbeitung.speichern');
     Route::post('/wochenbericht/{id}/abgeben', [WochenberichtController::class, 'abgeben'])->name('wochenbericht.abgeben');
     Route::post('/wochenbericht/{id}/signieren', [WochenberichtController::class, 'azubiSignieren'])->name('wochenbericht.signieren');
     Route::delete('/wochenbericht/{id}/signatur', [WochenberichtController::class, 'signaturLoeschen'])
         ->name('wochenbericht.signatur.loeschen');
     Route::get('/wochenbericht/{id}/pdf', [WochenberichtController::class, 'pdfExport'])->name('wochenbericht.pdf');
     Route::post('/wochenbericht/fehlend-erstellen', [WochenberichtController::class, 'fehlendErstellen'])->name('wochenbericht.fehlend');
-    Route::post('/wochenbericht/sammel-pdf', [WochenberichtController::class, 'sammelPdf'])->name('wochenbericht.sammel');
 
     // Kalender
     Route::post('/kalender/fach', [KalenderController::class, 'fachErstellen'])->name('kalender.fach.store');
@@ -62,7 +62,9 @@ Route::middleware(['auth', 'rolle:ausbilder,admin'])->prefix('ausbilder')->name(
     Route::delete('/klasse/{klasseId}/azubi/{azubiId}', [AusbilderController::class, 'azubiEntfernen'])->name('klasse.azubi.entfernen');
 
     // Berichte
+    Route::get('/azubi/{azubiId}', [AusbilderController::class, 'azubiProfil'])->name('azubi.profil');
     Route::get('/azubi/{azubiId}/berichte', [AusbilderController::class, 'azubiBerichte'])->name('azubi.berichte');
+    Route::get('/bericht/{id}/pdf', [AusbilderController::class, 'berichtPdf'])->name('bericht.pdf');
     Route::get('/bericht/{id}', [AusbilderController::class, 'berichtShow'])->name('bericht.show');
     Route::post('/bericht/{id}/signieren', [AusbilderController::class, 'berichtSignieren'])->name('bericht.signieren');
     Route::post('/bericht/{id}/kommentar', [AusbilderController::class, 'berichtKommentieren'])->name('bericht.kommentieren');
@@ -114,6 +116,7 @@ Route::middleware('auth')->group(function () {
         ->middleware('auth')
         ->name('profile.darkmode');
     Route::patch('/profile/signatur', [ProfileController::class, 'updateSignatur'])->name('profile.signatur');
+    Route::post('/wochenbericht/sammel-pdf', [WochenberichtController::class, 'sammelPdf'])->name('wochenbericht.sammel');
 });
 
 Route::get('/einladung/{token}', [RegisterInviteController::class, 'show'])->name('register.invite');
