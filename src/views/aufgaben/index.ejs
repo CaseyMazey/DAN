@@ -1,0 +1,424 @@
+<style>
+.af-wrap{max-width:1180px;margin:0 auto;padding:28px 24px 60px}
+.af-topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+
+/* Hours card */
+.hours-card{background:var(--dan-surface);border:1px solid var(--dan-border);border-radius:var(--dan-radius);box-shadow:var(--dan-shadow-sm);padding:18px 24px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;margin-bottom:20px}
+.hours-stat{text-align:center;min-width:90px}
+.hours-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--dan-text-muted);margin-bottom:4px}
+.hours-value{font-size:24px;font-weight:700;letter-spacing:-.4px}
+.hours-value.over{color:var(--dan-danger)}
+.h-divider{width:1px;height:40px;background:var(--dan-border);flex-shrink:0}
+.hours-progress{flex:1;min-width:200px}
+.hours-bar-fill.over{background:var(--dan-danger) !important}
+
+/* Kanban */
+.kanban{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start}
+@media(max-width:880px){.kanban{grid-template-columns:1fr}}
+
+.kanban-col{background:var(--dan-surface);border:1px solid var(--dan-border);border-radius:var(--dan-radius);box-shadow:var(--dan-shadow-sm);overflow:hidden}
+.kanban-head{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--dan-border);font-size:13px;font-weight:600}
+.kanban-head.gray {background:var(--dan-surface-alt)}
+.kanban-head.amber{background:var(--dan-warning-bg)}
+.kanban-head.green{background:var(--dan-success-bg)}
+.k-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.k-dot.gray {background:var(--dan-text-muted)}
+.k-dot.amber{background:var(--dan-warning)}
+.k-dot.green{background:var(--dan-success)}
+.k-count{font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--dan-surface);color:var(--dan-text-muted)}
+
+.kanban-body{padding:10px;display:flex;flex-direction:column;gap:8px;min-height:80px;border-radius:0 0 var(--dan-radius) var(--dan-radius);transition:background-color .12s}
+.kanban-body.drag-over{background-color:var(--dan-info-bg)}
+.kanban-empty{font-size:12.5px;color:var(--dan-text-muted);text-align:center;padding:16px 0}
+.kanban-card.dragging{opacity:.4}
+
+/* Kanban: Kategorie-Unterordner */
+.kanban-group{border:1px solid var(--dan-border);border-radius:var(--dan-radius-sm);overflow:hidden}
+.kanban-group-head{display:flex;align-items:center;gap:7px;width:100%;padding:8px 10px;background:var(--dan-surface-alt);border:none;cursor:pointer;font-size:12px;font-weight:600;color:var(--dan-text-secondary);text-align:left}
+.kanban-group-head:hover{background:var(--dan-border)}
+.kanban-group-toggle{display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--dan-text-muted);transition:transform .15s}
+.kanban-group:not(.collapsed) .kanban-group-toggle{transform:rotate(90deg)}
+.kanban-group-label{flex:1}
+.kanban-group-count{font-size:11px;font-weight:600;color:var(--dan-text-muted);background:var(--dan-surface);padding:1px 7px;border-radius:99px}
+.kanban-group-body{display:flex;flex-direction:column;gap:8px;padding:8px}
+.kanban-group.collapsed .kanban-group-body{display:none}
+
+/* Archive */
+.archive-wrap{background:var(--dan-surface);border:1px solid var(--dan-border);border-radius:var(--dan-radius);box-shadow:var(--dan-shadow-sm);overflow:hidden;margin-top:20px}
+.archive-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--dan-border);font-size:14px;font-weight:600}
+.archive-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 18px;border-bottom:1px solid var(--dan-border)}
+.archive-row:last-child{border-bottom:none}.archive-row:hover{background:var(--dan-surface-alt)}
+.archive-name{font-size:13px;font-weight:500}
+.archive-meta{font-size:12px;color:var(--dan-text-muted);margin-top:1px}
+
+/* Icon-only actions in the "Aufgabe bearbeiten" modal footer */
+.modal-icon-btn{width:34px;height:34px;border-radius:var(--dan-radius-sm);border:1px solid var(--dan-border-strong);background:var(--dan-surface);color:var(--dan-text-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .12s,border-color .12s,color .12s;flex-shrink:0}
+.modal-icon-btn:hover{background:var(--dan-surface-alt)}
+.modal-icon-btn.danger{color:var(--dan-danger)}
+.modal-icon-btn.danger:hover{background:var(--dan-danger-bg);border-color:var(--dan-danger)}
+.modal-icon-btn.primary{background:var(--dan-primary-700);border-color:var(--dan-primary-700);color:#fff}
+.modal-icon-btn.primary:hover{background:var(--dan-primary-800)}
+</style>
+
+<div class="af-wrap">
+
+    <div class="af-topbar">
+        <div class="dan-page-title">Aufgaben-Kanban</div>
+        <div style="display:flex;gap:8px">
+            <button class="btn btn-secondary" onclick="openModal('modal-config')">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+                Stunden konfigurieren
+            </button>
+            <button class="btn btn-primary" onclick="openModal('modal-erstellen')">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Neue Aufgabe
+            </button>
+        </div>
+    </div>
+
+    <% if (session('success')) { %>
+        <div class="dan-alert success" style="margin-bottom:16px">
+            <div class="dan-alert-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <div class="dan-alert-title" style="font-weight:500"><%= session('success') %></div>
+        </div>
+    <% } %>
+
+    
+    <div class="hours-card">
+        <div class="hours-stat">
+            <div class="hours-label">Betrieb Soll</div>
+            <div class="hours-value"><%= config.betrieb_stunden %><span style="font-size:13px;font-weight:400;color:var(--dan-text-muted)"> Std</span></div>
+        </div>
+        <div class="h-divider"></div>
+        <div class="hours-stat">
+            <div class="hours-label">Berufsschule Soll</div>
+            <div class="hours-value"><%= config.berufsschule_stunden %><span style="font-size:13px;font-weight:400;color:var(--dan-text-muted)"> Std</span></div>
+        </div>
+        <div class="h-divider"></div>
+        <div class="hours-progress">
+            <div style="display:flex;align-items:baseline;justify-content:space-between">
+                <div class="hours-label">Diese Woche</div>
+                <div class="hours-value <%= ueberschritten ? 'over' : '' %>" style="font-size:19px">
+                    <%= stundenDieseWoche %><span style="font-size:12px;font-weight:400;color:var(--dan-text-muted)"> / <%= config.max_stunden %> Std</span>
+                </div>
+            </div>
+            <% const pct = config.max_stunden > 0 ? min(100, round(stundenDieseWoche / config.max_stunden * 100)) : 0; %>
+            <div class="dan-progress-track" style="margin-top:8px">
+                <div class="dan-progress-fill hours-bar-fill <%= ueberschritten ? 'over' : '' %>" style="width:<%= pct %>%"></div>
+            </div>
+            <% if (ueberschritten) { %>
+                <div style="font-size:12px;color:var(--dan-danger);margin-top:5px;font-weight:500">⚠ Maximale Stundenanzahl überschritten</div>
+            <% } %>
+        </div>
+    </div>
+
+    
+    <div class="kanban">
+        <% for (const [status, [label, color]] of Object.entries({'geplant': ['Geplant','gray'], 'in_bearbeitung': ['In Bearbeitung','amber'], 'fertig': ['Fertig','green']})) { %>
+            <div class="kanban-col">
+                <div class="kanban-head <%= color %>">
+                    <span style="display:flex;align-items:center;gap:8px">
+                        <span class="k-dot <%= color %>"></span><%= label %>
+                    </span>
+                    <span class="k-count"><%= aufgaben.get(status, collect()).count() %></span>
+                </div>
+                <div class="kanban-body" data-status="<%= status %>"
+                     ondragover="dtOver(event)"
+                     ondragleave="dtLeave(event)"
+                     ondrop="dtDrop(event, '<%= status %>')">
+                    <% const statusAufgaben = aufgaben.get(status, collect()); %>
+                    <% if (statusAufgaben.isEmpty()) { %>
+                        <div class="kanban-empty">Keine Aufgaben</div>
+                    <% } else { %>
+                        <% for (const [katKey, katLabel] of Object.entries({'betrieb': 'Betrieb', 'berufsschule': 'Berufsschule', 'unterweisung': 'Unterweisung'})) { %>
+                            <% const katAufgaben = statusAufgaben.where('kategorie', katKey); %>
+                            <% if (katAufgaben.isNotEmpty()) { %>
+                                <div class="kanban-group collapsed" data-group="<%= status %>-<%= katKey %>">
+                                    <button type="button" class="kanban-group-head" onclick="toggleKanbanGroup(this)">
+                                        <span class="kanban-group-toggle"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+                                        <span class="kanban-group-label"><%= katLabel %></span>
+                                        <span class="kanban-group-count"><%= katAufgaben.count() %></span>
+                                    </button>
+                                    <div class="kanban-group-body">
+                                        <% for (const aufgabe of iter(katAufgaben)) { %>
+                                            <%- include('aufgaben/karte', {aufgabe}) %>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            <% } %>
+                        <% } %>
+                    <% } %>
+                </div>
+            </div>
+        <% } %>
+    </div>
+
+    
+    <% if (archiviert.count()) { %>
+        <div class="archive-wrap">
+            <div class="archive-head">
+                <span style="display:flex;align-items:center;gap:8px">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+                    Archiv
+                </span>
+                <span class="pill pill-neutral">letzte 5</span>
+            </div>
+            <% for (const aufgabe of iter(archiviert)) { %>
+                <div class="archive-row">
+                    <div>
+                        <div class="archive-name"><%= aufgabe.titel %></div>
+                        <div class="archive-meta">
+                            <%= ucfirst(aufgabe.kategorie) %> · <%= aufgabe.stunden %> Std
+                            <% if (aufgabe.in_wochenbericht) { %>
+                                · <span style="color:var(--dan-success);font-weight:500">Im Bericht</span>
+                            <% } %>
+                        </div>
+                    </div>
+                    <form method="POST" action="<%= route('aufgaben.wiederherstellen', aufgabe.id) %>">
+                         <input type="hidden" name="_method" value="PATCH">
+                        <button class="btn btn-secondary btn-sm">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.08"/></svg>
+                            Wiederherstellen
+                        </button>
+                    </form>
+                </div>
+            <% } %>
+        </div>
+    <% } %>
+</div>
+
+
+<div id="modal-erstellen" class="modal-bd">
+    <div class="modal">
+        <div class="modal-hd">
+            <span class="modal-title">Neue Aufgabe</span>
+            <button class="modal-x" onclick="closeModal('modal-erstellen')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>
+        <form method="POST" action="<%= route('aufgaben.store') %>">
+            
+            <input type="hidden" name="_form" value="erstellen">
+            <div class="modal-body">
+                <div class="dan-field">
+                    <label class="dan-label">Titel</label>
+                    <input type="text" name="titel" class="dan-input" required placeholder="Aufgabenbezeichnung" value="<%= old('titel') %>">
+                    <% if (errors['titel']) { const message = errors['titel']; %><div class="dan-field-error"><%= message %></div><% } %>
+                </div>
+                <div class="dan-field"><label class="dan-label">Beschreibung <span style="font-weight:400;color:var(--dan-text-muted)">(optional)</span></label><textarea name="beschreibung" class="dan-textarea" placeholder="Details, Kontext…"><%= old('beschreibung') %></textarea></div>
+                <div class="dan-field">
+                    <label class="dan-label">Kategorie</label>
+                    <select name="kategorie" id="neu-kat" class="dan-select"
+                        onchange="document.getElementById('neu-uw').style.display=this.value==='unterweisung'?'flex':'none'">
+                        <option value="betrieb" <%= (old('kategorie', 'betrieb') === 'betrieb') ? 'selected' : '' %>>Betrieb</option>
+                        <option value="berufsschule" <%= (old('kategorie') === 'berufsschule') ? 'selected' : '' %>>Berufsschule</option>
+                        <option value="unterweisung" <%= (old('kategorie') === 'unterweisung') ? 'selected' : '' %>>Unterweisung / Schulung</option>
+                    </select>
+                </div>
+                <div id="neu-uw" style="<%= old('kategorie') === 'unterweisung' ? '' : 'display:none' %>" class="dan-field">
+                    <label class="dan-label">Stunden abziehen bei</label>
+                    <select name="stunden_abziehen_bei" class="dan-select"><option value="betrieb">Betrieb</option><option value="berufsschule">Berufsschule</option></select>
+                </div>
+                <div class="dan-field">
+                    <label class="dan-label">Stunden</label>
+                    <input type="number" name="stunden" step="0.5" min="0.5" max="99" class="dan-input" required placeholder="0.0" value="<%= old('stunden') %>">
+                    <% if (errors['stunden']) { const message = errors['stunden']; %><div class="dan-field-error"><%= message %></div><% } %>
+                </div>
+            </div>
+            <div class="modal-ft">
+                <button type="button" onclick="closeModal('modal-erstellen')" class="btn btn-secondary">Abbrechen</button>
+                <button type="submit" class="btn btn-primary">Erstellen</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<div id="modal-config" class="modal-bd">
+    <div class="modal">
+        <div class="modal-hd">
+            <span class="modal-title">Stunden konfigurieren</span>
+            <button class="modal-x" onclick="closeModal('modal-config')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>
+        <form method="POST" action="<%= route('aufgaben.config') %>">
+             <input type="hidden" name="_method" value="PATCH">
+            <div class="modal-body">
+                <div class="dan-field"><label class="dan-label">Max. Stunden pro Woche</label><input type="number" name="max_stunden" step="0.5" value="<%= config.max_stunden %>" class="dan-input" required></div>
+                <div class="dan-field"><label class="dan-label">Betrieb Stunden (Soll)</label><input type="number" name="betrieb_stunden" step="0.5" value="<%= config.betrieb_stunden %>" class="dan-input" required></div>
+                <div class="dan-field"><label class="dan-label">Berufsschule Stunden (Soll)</label><input type="number" name="berufsschule_stunden" step="0.5" value="<%= config.berufsschule_stunden %>" class="dan-input" required></div>
+            </div>
+            <div class="modal-ft">
+                <button type="button" onclick="closeModal('modal-config')" class="btn btn-secondary">Abbrechen</button>
+                <button type="submit" class="btn btn-primary">Speichern</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<div id="modal-bearbeiten" class="modal-bd">
+    <div class="modal">
+        <div class="modal-hd">
+            <span class="modal-title">Aufgabe bearbeiten</span>
+            <button class="modal-x" onclick="closeModal('modal-bearbeiten')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>
+        <form method="POST" id="form-bearbeiten">
+             <input type="hidden" name="_method" value="PATCH">
+            <input type="hidden" name="_form" value="bearbeiten">
+            <input type="hidden" name="_edit_id" id="edit-id" value="<%= old('_edit_id') %>">
+            <div class="modal-body">
+                <div class="dan-field">
+                    <label class="dan-label">Titel</label>
+                    <input type="text" name="titel" id="edit-titel" class="dan-input" required>
+                    <% if (errors['titel']) { const message = errors['titel']; %><div class="dan-field-error"><%= message %></div><% } %>
+                </div>
+                <div class="dan-field"><label class="dan-label">Beschreibung</label><textarea name="beschreibung" id="edit-beschreibung" class="dan-textarea"></textarea></div>
+                <div class="dan-field">
+                    <label class="dan-label">Kategorie</label>
+                    <select name="kategorie" id="edit-kat" class="dan-select"
+                        onchange="document.getElementById('edit-uw').style.display=this.value==='unterweisung'?'flex':'none'">
+                        <option value="betrieb">Betrieb</option>
+                        <option value="berufsschule">Berufsschule</option>
+                        <option value="unterweisung">Unterweisung / Schulung</option>
+                    </select>
+                </div>
+                <div id="edit-uw" style="display:none" class="dan-field">
+                    <label class="dan-label">Stunden abziehen bei</label>
+                    <select name="stunden_abziehen_bei" id="edit-abziehen" class="dan-select"><option value="betrieb">Betrieb</option><option value="berufsschule">Berufsschule</option></select>
+                </div>
+                <div class="dan-field">
+                    <label class="dan-label">Stunden</label>
+                    <input type="number" name="stunden" id="edit-stunden" step="0.5" min="0.5" max="99" class="dan-input" required>
+                    <% if (errors['stunden']) { const message = errors['stunden']; %><div class="dan-field-error"><%= message %></div><% } %>
+                </div>
+            </div>
+            <div class="modal-ft" style="justify-content:space-between">
+                <div style="display:flex;gap:6px">
+                    <button type="button" class="modal-icon-btn" title="Aufgabe archivieren" aria-label="Aufgabe archivieren"
+                        onclick="document.getElementById('form-bearbeiten-archivieren').requestSubmit()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/></svg>
+                    </button>
+                    <button type="button" class="modal-icon-btn danger" title="Aufgabe löschen" aria-label="Aufgabe löschen"
+                        onclick="document.getElementById('form-bearbeiten-loeschen').requestSubmit()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                    </button>
+                </div>
+                <button type="submit" class="modal-icon-btn primary" title="Änderungen speichern" aria-label="Änderungen speichern">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </button>
+            </div>
+        </form>
+        <form method="POST" id="form-bearbeiten-archivieren" style="display:none">
+             <input type="hidden" name="_method" value="PATCH">
+        </form>
+        <form method="POST" id="form-bearbeiten-loeschen" style="display:none"
+            onsubmit="return confirm('Aufgabe wirklich löschen?')">
+             <input type="hidden" name="_method" value="DELETE">
+        </form>
+    </div>
+</div>
+
+<script>
+function openModal(id)  { document.getElementById(id).classList.add('open') }
+function closeModal(id) { document.getElementById(id).classList.remove('open') }
+document.querySelectorAll('.modal-bd').forEach(el =>
+    el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open') })
+)
+document.querySelectorAll('.js-aufgabe-edit').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const d = btn.dataset
+        document.getElementById('edit-titel').value = d.titel
+        document.getElementById('edit-beschreibung').value = d.beschreibung
+        document.getElementById('edit-kat').value = d.kategorie
+        document.getElementById('edit-stunden').value = d.stunden
+        document.getElementById('edit-id').value = d.id
+        document.getElementById('form-bearbeiten').action = '/aufgaben/' + d.id
+        document.getElementById('form-bearbeiten-archivieren').action = '/aufgaben/' + d.id + '/archivieren'
+        document.getElementById('form-bearbeiten-loeschen').action = '/aufgaben/' + d.id
+        const uw = document.getElementById('edit-uw')
+        uw.style.display = d.kategorie === 'unterweisung' ? 'flex' : 'none'
+        if (d.kategorie === 'unterweisung') document.getElementById('edit-abziehen').value = d.stundenAbziehen
+        openModal('modal-bearbeiten')
+    })
+})
+
+<% if (errors.any()) { %>
+    
+    <% if (old('_form') === 'bearbeiten') { %>
+        document.getElementById('form-bearbeiten').action = '/aufgaben/' + '<%= old('_edit_id') %>'
+        document.getElementById('form-bearbeiten-archivieren').action = '/aufgaben/' + '<%= old('_edit_id') %>' + '/archivieren'
+        document.getElementById('form-bearbeiten-loeschen').action = '/aufgaben/' + '<%= old('_edit_id') %>'
+        openModal('modal-bearbeiten')
+    <% } else { %>
+        openModal('modal-erstellen')
+    <% } %>
+<% } %>
+
+/* Kanban-Unterordner: Auf-/Zuklappen, Zustand ueberlebt Drag&Drop-Reload */
+function kanbanGroupState() {
+    try { return JSON.parse(localStorage.getItem('af-kanban-groups') || '{}') } catch (e) { return {} }
+}
+function toggleKanbanGroup(btn) {
+    const group = btn.closest('.kanban-group')
+    const expanded = group.classList.toggle('collapsed') === false
+    const state = kanbanGroupState()
+    state[group.dataset.group] = expanded
+    localStorage.setItem('af-kanban-groups', JSON.stringify(state))
+}
+;(function () {
+    const state = kanbanGroupState()
+    document.querySelectorAll('.kanban-group').forEach(group => {
+        if (state[group.dataset.group]) group.classList.remove('collapsed')
+    })
+})()
+
+/* Drag & Drop: Aufgaben-Karten zwischen Kanban-Spalten verschieben */
+let dtId = null
+let dtOriginStatus = null
+
+function dtStart(event, id) {
+    dtId = id
+    dtOriginStatus = event.target.closest('.kanban-body')?.dataset.status ?? null
+    event.target.classList.add('dragging')
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', id)
+}
+
+function dtEnd(event) {
+    event.target.classList.remove('dragging')
+    document.querySelectorAll('.kanban-body.drag-over').forEach(el => el.classList.remove('drag-over'))
+}
+
+function dtOver(event) {
+    event.preventDefault()
+    event.currentTarget.classList.add('drag-over')
+}
+
+function dtLeave(event) {
+    event.currentTarget.classList.remove('drag-over')
+}
+
+function dtDrop(event, status) {
+    event.preventDefault()
+    event.currentTarget.classList.remove('drag-over')
+
+    const id = dtId ?? event.dataTransfer.getData('text/plain')
+    if (!id || status === dtOriginStatus) return
+
+    fetch('/aufgaben/' + id + '/status', {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+        },
+        body: JSON.stringify({ status: status }),
+    }).then(response => {
+        if (response.ok) {
+            location.reload()
+        } else {
+            alert('Status konnte nicht geändert werden.')
+        }
+    }).catch(() => {
+        alert('Status konnte nicht geändert werden.')
+    })
+}
+</script>

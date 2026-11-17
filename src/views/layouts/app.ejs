@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="de">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+            <meta name="csrf-token" content="local">
+
+        <title><%= title ? title + ' — DAN' : 'DAN' %></title>
+
+        <!-- Favicon -->
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+        <link rel="alternate icon" href="/favicon.ico">
+
+        <!-- Dark mode anti-flash -->
+        <script>(function(){if(localStorage.getItem('dan_dark')==='1')document.documentElement.setAttribute('data-theme','dark');})();</script>
+
+        <!-- Scripts -->
+        <link rel="stylesheet" href="/fonts/fonts.css">
+    <link rel="stylesheet" href="/assets/app.css">
+        <script type="module" src="/assets/app.js"></script>
+    </head>
+    <body class="font-sans antialiased">
+        <div class="dan-shell">
+<header class="dan-header">
+    <div class="dan-header-inner">
+
+        
+        <a href="/dashboard" class="dan-brand">
+            <div class="dan-brand-mark">
+                <svg width="17" height="17" viewBox="0 0 20 20" fill="none">
+                    <rect x="3.5" y="2" width="11" height="14" rx="1.5" stroke="white" stroke-width="1.4" fill="none"/>
+                    <line x1="6" y1="6.5" x2="13" y2="6.5" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+                    <line x1="6" y1="9.5" x2="13" y2="9.5" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+                    <line x1="6" y1="12.5" x2="10" y2="12.5" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+                    <circle cx="15" cy="15" r="3.5" fill="#fff" fill-opacity=".25"/>
+                    <path d="M13.5 15l1 1 2-2" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <div class="dan-brand-text">
+                <span class="dan-brand-title">DAN</span>
+                <span class="dan-brand-sub">Digitaler Ausbildungsnachweis</span>
+            </div>
+        </a>
+
+        
+        <div class="dan-header-actions">
+            
+            <button class="dan-icon-btn" onclick="dnToggleDark()" title="Dark Mode umschalten" aria-label="Dark Mode">
+                <svg id="dn-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                <svg id="dn-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            </button>
+
+            
+            <button class="dan-hamburger" onclick="dnToggleMobile()" aria-label="Menü öffnen">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <line x1="3" y1="6" x2="21" y2="6"/>
+                    <line x1="3" y1="12" x2="21" y2="12"/>
+                    <line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+</header>
+
+<script>
+(function () {
+    function applyDark(on) {
+        document.documentElement.setAttribute('data-theme', on ? 'dark' : '');
+        const sun  = document.getElementById('dn-sun');
+        const moon = document.getElementById('dn-moon');
+        if (sun)  sun.style.display  = on ? 'block' : 'none';
+        if (moon) moon.style.display = on ? 'none'  : 'block';
+    }
+
+    (function() {
+        const stored = localStorage.getItem('dan_dark');
+        const serverPref = <%= user && user.dark_mode ? 'true' : 'false' %>;
+        if (stored === null) {
+            localStorage.setItem('dan_dark', serverPref ? '1' : '0');
+            applyDark(serverPref);
+        } else {
+            applyDark(stored === '1');
+        }
+    })();
+
+    window.dnToggleDark = function () {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const next = !isDark;
+        applyDark(next);
+        localStorage.setItem('dan_dark', next ? '1' : '0');
+        const cb = document.getElementById('dark_mode_toggle');
+        if (cb) cb.checked = next;
+        const token = document.querySelector('meta[name="csrf-token"]');
+        if (token) {
+            const fd = new FormData();
+            fd.append('_method', 'PATCH');
+            fd.append('dark_mode', next ? '1' : '0');
+            fd.append('_token', token.content);
+            fetch('/profile/darkmode', { method: 'POST', body: new URLSearchParams(fd) }).catch(() => {});
+        }
+    };
+
+    window.dnToggle = function (id, trigger) {
+        const el = document.getElementById(id);
+        const isOpen = el.classList.contains('dan-open');
+        document.querySelectorAll('.dan-dd').forEach(d => d.classList.remove('dan-open'));
+        document.querySelectorAll('.dan-chevron').forEach(c => c.classList.remove('flipped'));
+        if (!isOpen) {
+            el.classList.add('dan-open');
+            const chevron = trigger?.querySelector('.dan-chevron');
+            if (chevron) chevron.classList.add('flipped');
+        }
+    };
+
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('.dan-dd-wrap')) {
+            document.querySelectorAll('.dan-dd').forEach(d => d.classList.remove('dan-open'));
+            document.querySelectorAll('.dan-chevron').forEach(c => c.classList.remove('flipped'));
+        }
+    });
+
+    window.dnToggleMobile = function () {
+        document.getElementById('dan-sidebar')?.classList.toggle('dan-open');
+        document.getElementById('dan-sidebar-overlay')?.classList.toggle('dan-open');
+    };
+})();
+</script>
+
+            <div class="dan-body">
+<div class="dan-sidebar-overlay" id="dan-sidebar-overlay" onclick="dnToggleMobile()"></div>
+
+<aside class="dan-sidebar" id="dan-sidebar">
+    <nav class="dan-sidebar-nav">
+        <a href="<%= route('dashboard') %>" class="dan-nav-link <%= routeIs('dashboard') ? 'active' : '' %>">
+            <span class="dan-nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
+            Dashboard
+        </a>
+
+                        <a href="<%= route('wochenbericht.index') %>" class="dan-nav-link <%= routeIs('wochenbericht.*') && !routeIs('wochenbericht.zeitraeume*') ? 'active' : '' %>">
+                    <span class="dan-nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg></span>
+                    Wochenberichte
+                </a>
+                <a href="<%= route('aufgaben.index') %>" class="dan-nav-link <%= routeIs('aufgaben.*') ? 'active' : '' %>">
+                    <span class="dan-nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+                    Aufgaben
+                </a>
+                <a href="<%= route('kalender.index') %>" class="dan-nav-link <%= routeIs('kalender.*') ? 'active' : '' %>">
+                    <span class="dan-nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+                    Noten & Termine
+                </a>
+                <a href="<%= route('wochenbericht.zeitraeume') %>" class="dan-nav-link <%= routeIs('wochenbericht.zeitraeume*') ? 'active' : '' %>">
+                    <span class="dan-nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14.5"/></svg></span>
+                    Zeiträume
+                </a>
+    </nav>
+
+    <div class="dan-sidebar-footer">
+        <a href="<%= route('profile.edit') %>" class="dan-nav-link <%= routeIs('profile.edit') ? 'active' : '' %>">
+            <span class="dan-nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+            Mein Profil
+        </a>
+        <form method="POST" action="<%= route('logout') %>">
+            <button type="submit" class="dan-nav-link danger">
+                <span class="dan-nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>
+                Abmelden
+            </button>
+        </form>
+    </div>
+</aside>
+
+                <main class="dan-main">
+                    <%- body %>
+                </main>
+            </div>
+        </div>
+    </body>
+</html>

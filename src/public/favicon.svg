@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <clipPath id="half"><rect x="11.5" y="0" width="20.5" height="32"/></clipPath>
+    <mask id="bowl">
+      <ellipse cx="12" cy="16" rx="9.5" ry="9" fill="#fff"/>
+      <ellipse cx="12" cy="16" rx="5.5" ry="5" fill="#000"/>
+    </mask>
+  </defs>
+  <rect width="32" height="32" rx="7" fill="#0E4B48"/>
+  <rect x="8" y="7" width="4" height="18" fill="#fff"/>
+  <g clip-path="url(#half)">
+    <rect width="32" height="32" fill="#fff" mask="url(#bowl)"/>
+  </g>
+</svg>

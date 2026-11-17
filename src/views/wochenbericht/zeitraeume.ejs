@@ -1,0 +1,137 @@
+<style>
+.page { max-width: 820px; margin: 0 auto; padding: 28px 24px 60px; }
+.page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; gap: 12px; flex-wrap: wrap; }
+
+.form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+@media(max-width:700px){ .form-grid { grid-template-columns: 1fr; } }
+.error-msg { font-size: 11.5px; color: var(--dan-danger); }
+
+.zr-item { background: var(--dan-surface); border: 1px solid var(--dan-border); border-radius: var(--dan-radius); box-shadow: var(--dan-shadow-sm); padding: 18px 20px; margin-bottom: 12px; }
+.zr-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.zr-meta { flex: 1; min-width: 0; }
+.zr-name { font-size: 16px; font-weight: 600; color: var(--dan-text); }
+.zr-dates { font-size: 13px; color: var(--dan-text-muted); margin-top: 4px; }
+.zr-actions { display: flex; gap: 8px; flex-shrink: 0; align-items: flex-start; }
+
+.zr-edit { display: none; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--dan-border); }
+.zr-edit.open { display: block; }
+</style>
+
+<div class="page">
+    <div class="page-header">
+        <div>
+            <div class="dan-page-title">Meine Zeiträume</div>
+            <div class="dan-page-subtitle">Ferien, Praktika, Exkursionen o.Ä. — überschneidet sich ein Zeitraum mit einer Woche, wird das im Wochenbericht und im PDF-Export automatisch vermerkt.</div>
+        </div>
+        <a href="<%= route('wochenbericht.index') %>" class="btn btn-secondary">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Zurück zu Wochenberichten
+        </a>
+    </div>
+
+    <% if (session('success')) { %>
+        <div class="dan-alert success" style="margin-bottom:20px">
+            <div class="dan-alert-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <div class="dan-alert-title" style="font-weight:500"><%= session('success') %></div>
+        </div>
+    <% } %>
+    <% if (session('error')) { %>
+        <div class="dan-alert danger" style="margin-bottom:20px">
+            <div class="dan-alert-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+            <div class="dan-alert-title" style="font-weight:500"><%= session('error') %></div>
+        </div>
+    <% } %>
+
+    
+    <div class="card" style="padding:22px 22px 20px;margin-bottom:16px">
+        <div class="card-title" style="margin-bottom:16px">Neuen Zeitraum anlegen</div>
+        <form method="POST" action="<%= route('wochenbericht.zeitraeume.erstellen') %>">
+            
+            <div class="form-grid">
+                <div class="dan-field">
+                    <label class="dan-label">Von *</label>
+                    <input type="date" name="von_datum" value="<%= old('von_datum') %>" class="dan-input" required>
+                    <% if (errors['von_datum']) { const message = errors['von_datum']; %><span class="error-msg"><%= message %></span><% } %>
+                </div>
+                <div class="dan-field">
+                    <label class="dan-label">Bis *</label>
+                    <input type="date" name="bis_datum" value="<%= old('bis_datum') %>" class="dan-input" required>
+                    <% if (errors['bis_datum']) { const message = errors['bis_datum']; %><span class="error-msg"><%= message %></span><% } %>
+                </div>
+                <div class="dan-field">
+                    <label class="dan-label">Bezeichnung *</label>
+                    <input type="text" name="bezeichnung" value="<%= old('bezeichnung') %>" placeholder="z.B. Sommerferien" class="dan-input" required>
+                    <% if (errors['bezeichnung']) { const message = errors['bezeichnung']; %><span class="error-msg"><%= message %></span><% } %>
+                </div>
+            </div>
+            <div style="margin-top:16px">
+                <button type="submit" class="btn btn-primary">Zeitraum erstellen</button>
+            </div>
+        </form>
+    </div>
+
+    
+    <% if (count(zeitraeume)) { for (const zeitraum of iter(zeitraeume)) { %>
+        <div class="zr-item">
+            <div class="zr-header">
+                <div class="zr-meta">
+                    <div class="zr-name"><%= zeitraum.bezeichnung %></div>
+                    <div class="zr-dates"><%= zeitraum.von_datum.format('d.m.Y') %> – <%= zeitraum.bis_datum.format('d.m.Y') %></div>
+                </div>
+                <div class="zr-actions">
+                    <button class="btn btn-secondary btn-sm" onclick="toggleEdit(<%= zeitraum.id %>)">Bearbeiten</button>
+                    <form method="POST" action="<%= route('wochenbericht.zeitraeume.loeschen', zeitraum.id) %>"
+                          class="js-zeitraum-loeschen-form" data-bezeichnung="<%= zeitraum.bezeichnung %>">
+                        
+                        <input type="hidden" name="_method" value="DELETE">
+                        <button type="submit" class="btn btn-danger btn-sm">Löschen</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="zr-edit" id="edit-<%= zeitraum.id %>">
+                <form method="POST" action="<%= route('wochenbericht.zeitraeume.update', zeitraum.id) %>">
+                    
+                    <input type="hidden" name="_method" value="PUT">
+                    <div class="form-grid">
+                        <div class="dan-field">
+                            <label class="dan-label">Von *</label>
+                            <input type="date" name="von_datum" value="<%= zeitraum.von_datum.format('Y-m-d') %>" class="dan-input" required>
+                        </div>
+                        <div class="dan-field">
+                            <label class="dan-label">Bis *</label>
+                            <input type="date" name="bis_datum" value="<%= zeitraum.bis_datum.format('Y-m-d') %>" class="dan-input" required>
+                        </div>
+                        <div class="dan-field">
+                            <label class="dan-label">Bezeichnung *</label>
+                            <input type="text" name="bezeichnung" value="<%= zeitraum.bezeichnung %>" class="dan-input" required>
+                        </div>
+                    </div>
+                    <div style="margin-top:14px;display:flex;gap:8px">
+                        <button type="submit" class="btn btn-primary btn-sm">Speichern</button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="toggleEdit(<%= zeitraum.id %>)">Abbrechen</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    <% } } else { %>
+        <div class="empty-state" style="text-align:center;padding:48px 20px">
+            <p style="font-size:14px">Noch keine Zeiträume angelegt.</p>
+            <span style="font-size:13px;color:var(--dan-text-muted);display:block;margin-top:4px">Trage z.B. deine Sommerferien oder ein Praktikum ein — auch schon Monate im Voraus.</span>
+        </div>
+    <% } %>
+</div>
+
+<script>
+function toggleEdit(id) {
+    document.getElementById('edit-' + id).classList.toggle('open');
+}
+
+document.querySelectorAll('.js-zeitraum-loeschen-form').forEach(form => {
+    form.addEventListener('submit', e => {
+        if (!confirm(`Zeitraum '${form.dataset.bezeichnung}' wirklich löschen?`)) {
+            e.preventDefault();
+        }
+    });
+});
+</script>

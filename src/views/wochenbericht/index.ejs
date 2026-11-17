@@ -1,0 +1,618 @@
+<style>
+.wb-wrap{max-width:1180px;margin:0 auto;padding:28px 24px 60px}
+.wb-topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.wb-grid{display:flex;flex-direction:column;gap:20px}
+
+.status-bar{display:flex;flex-wrap:wrap;gap:6px;padding:14px 18px 0}
+.action-bar{display:flex;flex-wrap:wrap;gap:8px;padding:14px 18px;border-top:1px solid var(--dan-border);background:var(--dan-surface-alt)}
+
+.filter-bar{display:flex;flex-wrap:wrap;gap:10px;padding:16px 18px;border-bottom:1px solid var(--dan-border);align-items:flex-end}
+.filter-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--dan-text-muted);margin-bottom:4px}
+.filter-cb{display:flex;align-items:center;gap:5px;font-size:12.5px;color:var(--dan-text-muted);cursor:pointer}
+
+.month-btn{padding:5px 9px;border:1px solid var(--dan-border-strong);border-radius:6px;font-size:12px;font-family:var(--dan-font);background:var(--dan-surface);color:var(--dan-text-muted);cursor:pointer;transition:all .1s}
+.month-btn.sel{background:var(--dan-primary-700);color:#fff;border-color:var(--dan-primary-700)}
+
+.month-dd-trigger{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:170px;cursor:pointer;text-align:left}
+.month-dd-trigger:hover{border-color:var(--dan-primary-500)}
+.filter-cb:hover{background:var(--dan-surface-alt)}
+
+.bericht-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 18px;border-bottom:1px solid var(--dan-border);transition:background .1s}
+.bericht-row:last-child{border-bottom:none}.bericht-row:hover{background:var(--dan-surface-alt)}.bericht-row.active{background:var(--dan-info-bg)}
+
+/* ---------- Wochenbericht-Vorschau (modernes Dokument statt Tabelle) ---------- */
+.wbv-back{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:500;color:var(--dan-primary-600);text-decoration:none;margin-bottom:8px}
+.wbv-back:hover{opacity:.7}
+
+.wbv-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:2px 2px 4px}
+.wbv-title{font-size:22px;font-weight:700;letter-spacing:-.4px;color:var(--dan-text);line-height:1.2}
+.wbv-meta{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-top:7px}
+.wbv-meta-item{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--dan-text-secondary)}
+.wbv-meta-item svg{color:var(--dan-text-muted);flex-shrink:0}
+.wbv-head-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+
+.pill-dot{gap:7px}
+.pill-dot::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+
+.wbv-info-card{display:flex;align-items:stretch}
+.wbv-info-item{flex:1;display:flex;align-items:center;gap:11px;padding:16px 20px;min-width:180px}
+.wbv-info-item + .wbv-info-item{border-left:1px solid var(--dan-border)}
+.wbv-info-icon{width:36px;height:36px;border-radius:50%;background:var(--dan-surface-alt);color:var(--dan-text-secondary);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.wbv-info-label{font-size:11.5px;color:var(--dan-text-muted);margin-bottom:2px}
+.wbv-info-value{font-size:14px;font-weight:600;color:var(--dan-text)}
+@media (max-width:760px){.wbv-info-card{flex-direction:column}.wbv-info-item + .wbv-info-item{border-left:none;border-top:1px solid var(--dan-border)}}
+
+.wbv-doc-title{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;color:var(--dan-text);padding:16px 18px}
+.wbv-doc-body{padding:0 18px 18px;display:flex;flex-direction:column;gap:14px}
+
+.wbv-section{border:1px solid var(--dan-border);border-radius:var(--dan-radius-sm);overflow:hidden}
+.wbv-section-header{display:flex;align-items:center;gap:10px;padding:11px 16px;background:var(--wbv-bg)}
+.wbv-section-icon{width:28px;height:28px;border-radius:8px;background:var(--dan-surface);color:var(--wbv-color);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:inset 0 0 0 1px var(--wbv-color-soft)}
+.wbv-section-title{flex:1;font-size:13.5px;font-weight:600;color:var(--dan-text)}
+.wbv-section-total{font-size:13.5px;font-weight:700;color:var(--wbv-color)}
+.wbv-section-total span{font-weight:400;color:var(--dan-text-muted);margin-left:2px}
+
+.wbv-accent-petrol{--wbv-color:var(--dan-primary-600);--wbv-color-soft:var(--dan-primary-100);--wbv-bg:var(--dan-primary-50)}
+.wbv-accent-violet{--wbv-color:var(--dan-violet);--wbv-color-soft:var(--dan-violet-bg);--wbv-bg:var(--dan-violet-bg)}
+.wbv-accent-amber{--wbv-color:var(--dan-warning);--wbv-color-soft:var(--dan-warning-bg);--wbv-bg:var(--dan-warning-bg)}
+
+.wbv-section-body{padding:2px 16px}
+.wbv-row{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid var(--dan-border)}
+.wbv-row:last-child{border-bottom:none}
+.wbv-row-left{display:flex;align-items:flex-start;gap:10px;min-width:0}
+.wbv-row-dot{width:6px;height:6px;border-radius:50%;background:var(--wbv-color);flex-shrink:0;margin-top:6px}
+.wbv-row-title{font-size:13.5px;font-weight:500;color:var(--dan-text)}
+.wbv-row-sub{font-size:12px;color:var(--dan-text-muted);margin-top:2px}
+.wbv-row-value{font-size:13px;font-weight:600;color:var(--dan-text);white-space:nowrap;flex-shrink:0;padding-top:1px}
+
+.wbv-empty{display:flex;align-items:center;gap:8px;justify-content:center;padding:16px 10px;font-size:12.5px;color:var(--dan-text-muted);background:var(--dan-surface-alt);border-radius:var(--dan-radius-sm);margin:8px 0}
+.wbv-zeitraum-inline{display:flex;align-items:center;gap:7px;padding:8px 10px;margin:8px 0;font-size:12.5px;color:var(--dan-info);background:var(--dan-info-bg);border-radius:var(--dan-radius-sm)}
+
+.wbv-confirm-icon{width:30px;height:30px;border-radius:50%;background:var(--dan-primary-100);color:var(--dan-primary-700);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.wbv-sig-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:34px}
+.wbv-sig-box{padding-top:10px;border-top:1px solid var(--dan-border-strong);position:relative}
+.wbv-sig-label{font-size:12px;color:var(--dan-text-muted)}
+.wbv-sig-status{position:absolute;bottom:calc(100% + 8px);left:0}
+@media (max-width:640px){.wbv-sig-grid{grid-template-columns:1fr}}
+
+.wbv-foot{display:flex;flex-wrap:wrap;gap:8px;padding:14px 18px;border-top:1px solid var(--dan-border);background:var(--dan-surface-alt)}
+</style>
+
+<%
+    // Trennt "Titel: Beschreibung" abgegebener Eintraege wieder in Titel/Unterzeile.
+    const wbv_split = (text) => { const pos = String(text).indexOf(': '); return pos === -1 ? [text, null] : [text.slice(0, pos), text.slice(pos + 2)]; };
+%>
+
+<div class="wb-wrap">
+
+    <div class="wb-topbar">
+        <div class="dan-page-title">Wochenberichte</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <a href="<%= route('wochenbericht.zeitraeume') %>" class="btn btn-secondary">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                Zeiträume
+            </a>
+            <form method="POST" action="<%= route('wochenbericht.fehlend') %>">
+                
+                <button class="btn btn-secondary">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    Fehlende Berichte erstellen
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <% if (session('success')) { %>
+        <div class="dan-alert success" style="margin-bottom:16px">
+            <div class="dan-alert-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <div class="dan-alert-title" style="font-weight:500"><%= session('success') %></div>
+        </div>
+    <% } %>
+    <% if (session('error')) { %>
+        <div class="dan-alert danger" style="margin-bottom:16px">
+            <div class="dan-alert-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+            <div class="dan-alert-title" style="font-weight:500"><%= session('error') %></div>
+        </div>
+    <% } %>
+
+    <div class="wb-grid">
+
+        
+        <div class="card" style="padding:12px 20px">
+            <div class="stat-strip">
+                <div class="stat-strip-item">
+                    <div class="stat-strip-value"><%= stats['gesamt'] %></div>
+                    <div class="stat-strip-label">Berichte gesamt</div>
+                </div>
+                <div class="stat-strip-divider"></div>
+                <div class="stat-strip-item">
+                    <div class="stat-strip-value" style="color:var(--dan-success)"><%= stats['signiert'] %></div>
+                    <div class="stat-strip-label">Signiert</div>
+                </div>
+                <div class="stat-strip-divider"></div>
+                <div class="stat-strip-item">
+                    <div class="stat-strip-value" style="color:var(--dan-warning)"><%= stats['ausstehend'] %></div>
+                    <div class="stat-strip-label">Noch zu signieren</div>
+                </div>
+                <div class="stat-strip-divider"></div>
+                <div class="stat-strip-item">
+                    <div class="stat-strip-value" style="color:var(--dan-danger)"><%= stats['bearbeitet'] %></div>
+                    <div class="stat-strip-label">Nachträglich bearbeitet</div>
+                </div>
+            </div>
+        </div>
+
+        
+        <% if (vorschau) { %>
+            <% if (aktuell && vorschau.id !== aktuell.id) { %>
+                <a href="<%= route('wochenbericht.index') %>" class="wbv-back">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+                    Zurück zur aktuellen Woche
+                </a>
+            <% } %>
+
+            
+            <div class="wbv-head">
+                <div>
+                    <div class="wbv-title">Wochenbericht</div>
+                    <div class="wbv-meta">
+                        <span class="wbv-meta-item">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                            KW <%= vorschau.startdatum.format('W / Y') %>
+                        </span>
+                        <span class="wbv-meta-item">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>
+                            <%= vorschau.startdatum.format('d.m.Y') %> – <%= vorschau.enddatum.format('d.m.Y') %>
+                        </span>
+                    </div>
+                </div>
+                <div class="wbv-head-actions">
+                    <% if (vorschau.gesperrt) { %>
+                        <span class="pill pill-locked pill-dot">Gesperrt</span>
+                    <% } else if (vorschau.azubi_signiert) { %>
+                        <span class="pill pill-success pill-dot">Signiert</span>
+                    <% } else if (vorschau.abgegeben) { %>
+                        <span class="pill pill-warning pill-dot">Abgegeben</span>
+                    <% } else { %>
+                        <span class="pill pill-neutral pill-dot">In Bearbeitung</span>
+                    <% } %>
+                    <% if (vorschau.bearbeitet) { %>
+                        <span class="pill pill-danger">⚠ Nachträglich bearbeitet</span>
+                    <% } %>
+                    <a href="<%= route('wochenbericht.show', vorschau.id) %>" class="btn btn-secondary btn-sm">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        Bearbeiten
+                    </a>
+                    <a href="<%= route('wochenbericht.pdf', vorschau.id) %>" class="btn btn-primary btn-sm">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        PDF exportieren
+                    </a>
+                </div>
+            </div>
+
+            
+            <div class="card wbv-info-card">
+                <div class="wbv-info-item">
+                    <div class="wbv-info-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                    <div>
+                        <div class="wbv-info-label">Auszubildende/r</div>
+                        <div class="wbv-info-value"><%= user.full_name %></div>
+                    </div>
+                </div>
+                <div class="wbv-info-item">
+                    <div class="wbv-info-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.66 2.69 3 6 3s6-1.34 6-3v-5"/></svg></div>
+                    <div>
+                        <div class="wbv-info-label">Ausbildungsjahr</div>
+                        <div class="wbv-info-value"><%= ausbildungsjahr ? ausbildungsjahr + '. Jahr' : '—' %></div>
+                    </div>
+                </div>
+                <div class="wbv-info-item">
+                    <div class="wbv-info-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="4" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+                    <div>
+                        <div class="wbv-info-label">Abteilung</div>
+                        <div class="wbv-info-value"><%= user.abteilung ?? '—' %></div>
+                    </div>
+                </div>
+            </div>
+
+            
+            <% if (zeitraum) { %>
+                <div class="card" style="padding:14px 18px;display:flex;align-items:flex-start;gap:10px;background:var(--dan-info-bg);border-color:transparent">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--dan-info)" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;margin-top:1px"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    <div style="font-size:13.5px;color:var(--dan-text)">
+                        <% if (zeitraumVoll) { %>
+                            Diese Woche fällt vollständig in den Zeitraum <strong>„<%= zeitraum.bezeichnung %>“</strong>
+                            (<%= zeitraum.von_datum.format('d.m.Y') %> – <%= zeitraum.bis_datum.format('d.m.Y') %>).
+                        <% } else { %>
+                            <strong><%= zeitraumTage %></strong> dieser Woche fallen in den Zeitraum <strong>„<%= zeitraum.bezeichnung %>“</strong>
+                            (<%= zeitraum.von_datum.format('d.m.Y') %> – <%= zeitraum.bis_datum.format('d.m.Y') %>).
+                        <% } %>
+                    </div>
+                </div>
+            <% } %>
+
+            
+            <div class="card">
+                <div class="wbv-doc-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--dan-primary-600)" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+                    Ausbildungsnachweis (wöchentlich)
+                </div>
+                <div class="wbv-doc-body">
+                    <% for (const [key, cfg] of Object.entries({
+                        'betrieb': {'label': 'Betriebliche Tätigkeiten', 'accent': 'petrol', 'icon': '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>'},
+                        'berufsschule': {'label': 'Themen des Berufsschulunterrichts', 'accent': 'violet', 'icon': '<path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.66 2.69 3 6 3s6-1.34 6-3v-5"/>'},
+                        'unterweisung': {'label': 'Unterweisungen bzw. überbetriebliche Unterweisungen, betrieblicher Unterricht, sonstige Schulungen', 'accent': 'amber', 'icon': '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>'},
+                    })) { %>
+                        <% const kat      = vorschau.eintraege.where('kategorie', key);
+                            const aufgaben = aufgabenVorschau.get(key, collect());
+                            const summe    = kat.sum('stunden') + aufgaben.sum('stunden'); %>
+                        <div class="wbv-section wbv-accent-<%= cfg['accent'] %>">
+                            <div class="wbv-section-header">
+                                <div class="wbv-section-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><%- cfg['icon'] %></svg></div>
+                                <div class="wbv-section-title"><%= cfg['label'] %></div>
+                                <div class="wbv-section-total"><%= number_format(summe, 2) %><span>Std.</span></div>
+                            </div>
+                            <div class="wbv-section-body">
+                                <% if (zeitraumVoll) { %>
+                                    <div class="wbv-empty">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                        <%= zeitraum.bezeichnung %>
+                                    </div>
+                                <% } else { %>
+                                    <% if (zeitraum) { %>
+                                        <div class="wbv-zeitraum-inline">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                            <%= zeitraumTage %>: <%= zeitraum.bezeichnung %>
+                                        </div>
+                                    <% } %>
+                                    <% if (kat.count() === 0 && aufgaben.count() === 0) { %>
+                                        <div class="wbv-empty">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                                            Keine Einträge vorhanden.
+                                        </div>
+                                    <% } else { %>
+                                        <% for (const e of iter(kat)) { %>
+                                            <% const [titel, sub] = wbv_split(e.beschreibung); %>
+                                            <div class="wbv-row">
+                                                <div class="wbv-row-left">
+                                                    <span class="wbv-row-dot"></span>
+                                                    <div>
+                                                        <div class="wbv-row-title"><%= titel %></div>
+                                                        <% if (sub) { %><div class="wbv-row-sub"><%= sub %></div><% } %>
+                                                    </div>
+                                                </div>
+                                                <div class="wbv-row-value"><%= number_format(e.stunden, 2) %> Std.</div>
+                                            </div>
+                                        <% } %>
+                                        <% for (const a of iter(aufgaben)) { %>
+                                            <div class="wbv-row">
+                                                <div class="wbv-row-left">
+                                                    <span class="wbv-row-dot"></span>
+                                                    <div>
+                                                        <div class="wbv-row-title"><%= a.titel %></div>
+                                                        <div class="wbv-row-sub">
+                                                            <%= a.beschreibung %>
+                                                            <%= a.beschreibung ? '· ' : '' %><%= a.status === 'fertig' ? 'Fertig' : 'In Bearbeitung' %>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="wbv-row-value"><%= number_format(a.stunden, 2) %> Std.</div>
+                                            </div>
+                                        <% } %>
+                                    <% } %>
+                                <% } %>
+                            </div>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+
+            
+            <div class="card">
+                <div class="card-body" style="padding:18px">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+                        <div class="wbv-confirm-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+                        <span class="card-title" style="font-size:15px">Bestätigung</span>
+                    </div>
+                    <p style="font-size:12.5px;color:var(--dan-text-muted);margin:8px 0 0 44px">Durch die nachfolgende Unterschrift wird die Richtigkeit und Vollständigkeit der obigen Angaben bestätigt.</p>
+                    <div class="wbv-sig-grid">
+                        <div class="wbv-sig-box">
+                            <% if (vorschau.azubi_signiert) { %>
+                                <span class="pill pill-success wbv-sig-status">✓ Signiert <%= vorschau.azubi_signiert_am?.format('d.m.Y') %></span>
+                            <% } %>
+                            <div class="wbv-sig-label">Datum, Unterschrift Auszubildende/r</div>
+                        </div>
+                        <div class="wbv-sig-box">
+                            <% if (vorschau.signiert) { %>
+                                <span class="pill pill-success wbv-sig-status">✓ Signiert <%= vorschau.signiert_am?.format('d.m.Y') %></span>
+                            <% } %>
+                            <div class="wbv-sig-label">Datum, Unterschrift Ausbildende/r oder Ausbilder/in</div>
+                        </div>
+                    </div>
+                </div>
+                <% if (!vorschau.gesperrt) { %>
+                    <div class="wbv-foot">
+                        <% if (!vorschau.azubi_signiert) { %>
+                            <form method="POST" action="<%= route('wochenbericht.signieren', vorschau.id) %>">
+                                
+                                <button class="btn btn-success">✍ Signieren</button>
+                            </form>
+                        <% } else { %>
+                            <span class="pill pill-success" style="padding:7px 12px">✓ Von dir signiert</span>
+                            <form method="POST" action="<%= route('wochenbericht.signatur.loeschen', vorschau.id) %>">
+                                 <input type="hidden" name="_method" value="DELETE">
+                                <button class="btn btn-danger">Signatur löschen</button>
+                            </form>
+                        <% } %>
+                    </div>
+                <% } %>
+            </div>
+
+            
+            <% if (vorschau.bearbeitungen && vorschau.bearbeitungen.count()) { %>
+                <div class="card" style="padding:16px 18px;background:var(--dan-danger-bg);border-color:transparent">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                        <span style="font-size:13px;font-weight:600;color:var(--dan-danger);display:flex;align-items:center;gap:6px">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            Bearbeitungshistorie
+                        </span>
+                        <span style="font-size:12px;color:var(--dan-danger)"><%= vorschau.bearbeitungen.count() %> <%= vorschau.bearbeitungen.count() === 1 ? 'Eintrag' : 'Einträge' %></span>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:8px">
+                        <% for (const b of iter(vorschau.bearbeitungen)) { %>
+                            <div style="padding:10px 14px;background:var(--dan-surface);border:1px solid var(--dan-danger);border-radius:var(--dan-radius-sm)">
+                                <div style="font-size:13px;font-weight:600;color:var(--dan-text)"><%= b.autor.full_name %></div>
+                                <div style="font-size:13px;color:var(--dan-text);margin-top:3px"><%= b.kommentar %></div>
+                                <div style="font-size:11.5px;color:var(--dan-danger);margin-top:4px"><%= b.created_at.format('d.m.Y H:i') %></div>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            <% } %>
+        <% } else { %>
+            <div class="card card-body" style="padding:18px">
+                <p style="font-size:13px;color:var(--dan-text-muted)">Kein Bericht für diese Woche vorhanden.</p>
+            </div>
+        <% } %>
+
+        
+        <div class="card">
+            <div class="card-header bordered">
+                <span class="card-title">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 8 14"/></svg>
+                    Vergangene Berichte
+                </span>
+            </div>
+
+            
+            <div class="filter-bar">
+                <div style="display:flex;flex-direction:column;gap:4px">
+                    <div class="filter-label">Jahr</div>
+                    <select id="filter-jahr" onchange="filterUpdate()" class="dan-select" style="cursor:pointer">
+                        <option value="">Alle Jahre</option>
+                        <% for (const jahr of iter(jahre)) { %>
+                            <option value="<%= jahr %>"><%= jahr %></option>
+                        <% } %>
+                    </select>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:4px">
+                    <div class="filter-label">Monate</div>
+                    <div class="dan-dd-wrap">
+                        <button type="button" class="dan-select month-dd-trigger" onclick="dnToggle('monthDd', this)">
+                            <span id="month-dd-label">Alle Monate</span>
+                            <svg class="dan-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                        </button>
+                        <div class="dan-dd" id="monthDd" style="padding:10px;min-width:230px">
+                            <div style="display:flex;gap:6px;margin-bottom:8px">
+                                <button type="button" class="btn btn-secondary btn-sm" style="flex:1" onclick="monthSelectAll()">Alle auswählen</button>
+                                <button type="button" class="btn btn-secondary btn-sm" style="flex:1" onclick="monthSelectReset()">Zurücksetzen</button>
+                            </div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;max-height:220px;overflow-y:auto">
+                                <% for (const [i, m] of entries(['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'])) { %>
+                                    <label class="filter-cb" style="padding:6px 7px;border-radius:6px">
+                                        <input type="checkbox" class="month-checkbox" data-month="<%= i + 1 %>" onchange="monthCheckboxChanged()" style="accent-color:var(--dan-primary-700)">
+                                        <%= m %>
+                                    </label>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:4px">
+                    <div class="filter-label">Signiert</div>
+                    <div style="display:flex;gap:4px">
+                        <button class="month-btn" data-sig="azubi" data-val="ja" onclick="toggleSig(this)">Ja</button>
+                        <button class="month-btn" data-sig="azubi" data-val="nein" onclick="toggleSig(this)">Nein</button>
+                    </div>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-left:auto;align-self:flex-end">
+                    <button class="btn btn-secondary" onclick="filterReset()">Zurücksetzen</button>
+                    <form method="POST" action="<%= route('wochenbericht.sammel') %>" id="form-sammel" style="display:inline">
+                        
+                        <input type="hidden" name="ids" id="sammel-ids">
+                        <button type="submit" class="btn btn-secondary" id="btn-sammel" onclick="setSammelIds()">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            Sammel-PDF
+                        </button>
+                    </form>
+                    <form method="POST" action="<%= route('wochenbericht.sammel') %>" id="form-hj1" style="display:inline">
+                        
+                        <input type="hidden" name="ids" id="hj1-ids">
+                        <button type="submit" class="btn btn-secondary" id="btn-hj1" disabled
+                                style="opacity:.35;cursor:not-allowed"
+                                onclick="return setHalbjahrIds(1)">1. Halbjahr PDF</button>
+                    </form>
+                    <form method="POST" action="<%= route('wochenbericht.sammel') %>" id="form-hj2" style="display:inline">
+                        
+                        <input type="hidden" name="ids" id="hj2-ids">
+                        <button type="submit" class="btn btn-secondary" id="btn-hj2" disabled
+                                style="opacity:.35;cursor:not-allowed"
+                                onclick="return setHalbjahrIds(2)">2. Halbjahr PDF</button>
+                    </form>
+                </div>
+            </div>
+
+            <div style="overflow-x:auto">
+                <table class="dan-table" id="berichte-table">
+                    <thead>
+                        <tr>
+                            <th>KW</th>
+                            <th>Zeitraum</th>
+                            <th>Status</th>
+                            <th>Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (count(vergangen)) { for (const bericht of iter(vergangen)) { %>
+                            <tr data-jahr="<%= bericht.startdatum.year %>"
+                                data-monat="<%= bericht.startdatum.month %>"
+                                data-id="<%= bericht.id %>"
+                                data-azubi-sig="<%= bericht.azubi_signiert ? 'ja' : 'nein' %>"
+                                data-ausbilder-sig="<%= bericht.signiert ? 'ja' : 'nein' %>">
+                                <td style="font-weight:600">KW <%= bericht.startdatum.format('W / Y') %></td>
+                                <td style="color:var(--dan-text-muted);font-size:12px">
+                                    <%= bericht.startdatum.format('d.m.Y') %> – <%= bericht.enddatum.format('d.m.Y') %>
+                                </td>
+                                <td>
+                                    <div style="display:flex;flex-wrap:wrap;gap:4px">
+                                        <% if (bericht.gesperrt) { %>
+                                            <span class="pill pill-locked">🔒 Gesperrt</span>
+                                        <% } else if (bericht.signiert) { %>
+                                            <span class="pill pill-success">✅ Signiert</span>
+                                        <% } else if (bericht.azubi_signiert) { %>
+                                            <span class="pill pill-primary">✍ Von dir signiert</span>
+                                        <% } else if (bericht.abgegeben) { %>
+                                            <span class="pill pill-warning">📤 Abgegeben</span>
+                                        <% } else { %>
+                                            <span class="pill pill-neutral">✏️ In Bearbeitung</span>
+                                        <% } %>
+                                        <% if (bericht.bearbeitet) { %>
+                                            <span class="pill pill-danger">⚠️ Bearbeitet</span>
+                                        <% } %>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="display:flex;gap:6px;align-items:center">
+                                        <a href="<%= route('wochenbericht.index', {vorschau: bericht.id}) %>" class="btn btn-secondary btn-sm">
+                                            Vorschau
+                                        </a>
+                                        <a href="<%= route('wochenbericht.pdf', bericht.id) %>" class="btn btn-secondary btn-sm">
+                                            PDF
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% } } else { %>
+                            <tr><td colspan="4"><div class="empty-state" style="text-align:center">Keine vergangenen Berichte.</div></td></tr>
+                        <% } %>
+                    </tbody>
+                </table>
+                <div id="keine-ergebnisse" style="display:none;padding:24px;text-align:center;color:var(--dan-text-muted);font-size:13px">Keine Berichte für diese Filterauswahl.</div>
+                <% if (vergangen.count() > 5) { %>
+                    <div style="padding:12px 18px;border-top:1px solid var(--dan-border);text-align:center">
+                        <button type="button" id="btn-show-all" class="btn btn-secondary btn-sm" onclick="toggleShowAll()">
+                            Alle <%= vergangen.count() %> Berichte anzeigen
+                        </button>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+let selectedMonths = new Set();
+let sigFilter = { azubi: null, ausbilder: null };
+let showAllBerichte = false;
+const BERICHTE_LIMIT = 5;
+
+function monthCheckboxChanged() {
+    selectedMonths = new Set(
+        [...document.querySelectorAll('.month-checkbox:checked')].map(cb => parseInt(cb.dataset.month))
+    );
+    updateMonthDdLabel();
+    filterUpdate();
+}
+
+function monthSelectAll() {
+    document.querySelectorAll('.month-checkbox').forEach(cb => cb.checked = true);
+    monthCheckboxChanged();
+}
+
+function monthSelectReset() {
+    document.querySelectorAll('.month-checkbox').forEach(cb => cb.checked = false);
+    monthCheckboxChanged();
+}
+
+function updateMonthDdLabel() {
+    const label = document.getElementById('month-dd-label');
+    const n = selectedMonths.size;
+    label.textContent = n === 0 ? 'Alle Monate' : `${n} ${n === 1 ? 'Monat' : 'Monate'} ausgewählt`;
+}
+
+function toggleSig(btn) {
+    const type = btn.dataset.sig;
+    const val  = btn.dataset.val;
+    if (sigFilter[type] === val) {
+        sigFilter[type] = null;
+        btn.classList.remove('sel');
+    } else {
+        sigFilter[type] = val;
+        document.querySelectorAll('[data-sig="' + type + '"]').forEach(b => b.classList.remove('sel'));
+        btn.classList.add('sel');
+    }
+    filterUpdate();
+}
+
+function filterUpdate() {
+    const jahr = document.getElementById('filter-jahr').value;
+    const filtersActive = !!jahr || selectedMonths.size > 0 || !!sigFilter.azubi || !!sigFilter.ausbilder;
+    const rows = document.querySelectorAll('#berichte-table tbody tr[data-id]');
+    let visible = 0;
+    let matched = 0;
+    rows.forEach(row => {
+        const jahrOk = !jahr || row.dataset.jahr === jahr;
+        const monatOk = selectedMonths.size === 0 || selectedMonths.has(parseInt(row.dataset.monat));
+        const azubiOk = !sigFilter.azubi || row.dataset.azubiSig === sigFilter.azubi;
+        const ausbilderOk = !sigFilter.ausbilder || row.dataset.ausbilderSig === sigFilter.ausbilder;
+        const matches = jahrOk && monatOk && azubiOk && ausbilderOk;
+        const withinLimit = filtersActive || showAllBerichte || matched < BERICHTE_LIMIT;
+        const show = matches && withinLimit;
+        row.style.display = show ? '' : 'none';
+        if (matches) matched++;
+        if (show) visible++;
+    });
+    document.getElementById('keine-ergebnisse').style.display = visible === 0 ? 'block' : 'none';
+    const showAllBtn = document.getElementById('btn-show-all');
+    if (showAllBtn) {
+        showAllBtn.style.display = filtersActive ? 'none' : '';
+        showAllBtn.textContent = showAllBerichte ? 'Nur die letzten 5 anzeigen' : `Alle ${matched} Berichte anzeigen`;
+    }
+    const hj = !!jahr;
+    ['btn-hj1','btn-hj2'].forEach(id => {
+        const btn = document.getElementById(id);
+        btn.disabled = !hj;
+        btn.style.opacity = hj ? '1' : '.35';
+        btn.style.cursor = hj ? 'pointer' : 'not-allowed';
+    });
+}
+
+function toggleShowAll() {
+    showAllBerichte = !showAllBerichte;
+    filterUpdate();
+}
+
+function setHalbjahrIds(hj) {
+    if (document.getElementById('btn-hj' + hj).disabled) return false;
+    const jahr = document.getElementById('filter-jahr').value;
+    const monate = hj === 1 ? [1,2,3,4,5,6] : [7,8,9,10,11,12];
+    const ids = [...document.querySelectorAll('#berichte-table tbody tr[data-id]')]
+        .filter(r => r.dataset.jahr === jahr && monate.includes(parseInt(r.dataset.monat)))
+        .map(r => r.dataset.id);
+    document.getElementById('hj' + hj + '-ids').value = ids.join(',');
+    return true;
+}
+
+filterUpdate();
+</script>

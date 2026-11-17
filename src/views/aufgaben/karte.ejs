@@ -1,0 +1,39 @@
+
+<div class="kanban-card"
+     draggable="true"
+     data-id="<%= aufgabe.id %>"
+     ondragstart="dtStart(event, <%= aufgabe.id %>)"
+     ondragend="dtEnd(event)"
+     style="background:var(--dan-surface);border:1px solid var(--dan-border);border-radius:var(--dan-radius-sm);padding:10px 12px;transition:border-color .12s,box-shadow .12s,opacity .15s;cursor:grab"
+     onmouseover="this.style.borderColor='var(--dan-primary-500)';this.style.boxShadow='0 1px 6px rgba(15,92,87,.12)'"
+     onmouseout="this.style.borderColor='var(--dan-border)';this.style.boxShadow='none'">
+
+    
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+        <span style="font-size:13px;font-weight:600;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden"><%= aufgabe.titel %></span>
+        <span style="font-size:12px;color:var(--dan-text-muted);white-space:nowrap;padding-top:1px;flex-shrink:0"><%= aufgabe.stunden %> Std</span>
+    </div>
+
+    
+    <% if (aufgabe.beschreibung) { %>
+        <p style="font-size:12px;color:var(--dan-text-muted);margin-top:3px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden"><%= aufgabe.beschreibung %></p>
+    <% } %>
+
+    
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:7px">
+        <% const katLabel = {'betrieb': 'Betrieb', 'berufsschule': 'Berufsschule'}[aufgabe.kategorie] ?? 'Unterweisung';
+            const katPill  = {'betrieb': 'pill-primary', 'berufsschule': 'pill-violet'}[aufgabe.kategorie] ?? 'pill-warning'; %>
+        <span class="pill <%= katPill %>" style="padding:2px 8px;font-size:11px;min-width:0;overflow:hidden;text-overflow:ellipsis"><%= katLabel %></span>
+
+        <button class="js-aufgabe-edit"
+            data-id="<%= aufgabe.id %>" data-titel="<%= aufgabe.titel %>" data-beschreibung="<%= aufgabe.beschreibung ?? '' %>"
+            data-kategorie="<%= aufgabe.kategorie %>" data-stunden="<%= aufgabe.stunden %>" data-stunden-abziehen="<%= aufgabe.stunden_abziehen_bei %>"
+            title="Bearbeiten" aria-label="Aufgabe bearbeiten"
+            style="display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;cursor:pointer;border:none;background:transparent;color:var(--dan-text-muted);transition:background .1s,color .1s;flex-shrink:0"
+            onmouseover="this.style.background='var(--dan-info-bg)';this.style.color='var(--dan-primary-700)'"
+            onmouseout="this.style.background='transparent';this.style.color='var(--dan-text-muted)'">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+    </div>
+
+</div>

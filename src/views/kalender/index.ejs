@@ -1,0 +1,664 @@
+<%
+    // Hilfsfunktionen der Seite (aus der PHP-Version uebernommen)
+    const kal_notenlabel = (note) => note <= 1.5 ? 'Sehr gut' : note <= 2.5 ? 'Gut' : note <= 3.5 ? 'Befriedigend' : note <= 4.5 ? 'Ausreichend' : note <= 5.5 ? 'Mangelhaft' : 'Ungenügend';
+    const kal_notecls = (note) => note <= 2.5 ? 'good' : (note <= 4 ? 'mid' : 'bad');
+    const kal_plural = (singular, anzahl) => anzahl === 1 ? singular : ({ 'Note': 'Noten', 'Fach': 'Fächer' }[singular] ?? singular + 'e');
+    const kal_monat = (monat) => ['JAN','FEB','MÄR','APR','MAI','JUN','JUL','AUG','SEP','OKT','NOV','DEZ'][monat - 1];
+%>
+
+<style>
+.kal-wrap{max-width:1180px;margin:0 auto;padding:28px 24px 60px}
+.kal-grid{display:flex;flex-direction:column;gap:20px}
+
+.kal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.kal-jahr-form{margin-top:10px}
+.kal-jahr-form select{min-width:230px}
+
+.kal-actions{display:flex;gap:8px;margin-top:2px}
+.kal-fach-toolbar{display:flex;justify-content:flex-end;margin-top:10px}
+
+/* Termine (zweispaltig) */
+.kal-two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+@media(max-width:880px){.kal-two-col{grid-template-columns:1fr}}
+
+.tl-row{display:flex;align-items:flex-start;gap:12px;padding:12px 18px;border-bottom:1px solid var(--dan-border);transition:background .1s}
+.tl-row:last-child{border-bottom:none}
+.tl-row:hover{background:var(--dan-surface-alt)}
+.tl-date{width:48px;flex-shrink:0;text-align:center;background:var(--dan-surface-alt);border-radius:var(--dan-radius-sm);padding:6px 4px}
+.tl-date .d{font-size:15px;font-weight:700;color:var(--dan-text);line-height:1.1}
+.tl-date .m{font-size:10px;font-weight:600;color:var(--dan-text-muted);text-transform:uppercase;letter-spacing:.3px}
+.tl-body{flex:1;min-width:0}
+.tl-fach{font-size:13.5px;font-weight:600;color:var(--dan-text);margin-top:5px}
+.tl-thema{font-size:12px;color:var(--dan-text-muted);margin-top:1px}
+.tl-time{font-size:11.5px;color:var(--dan-text-muted);white-space:nowrap;flex-shrink:0;padding-top:2px}
+.tl-actions{display:flex;gap:4px;margin-top:6px}
+.t-action-btn{display:inline-flex;align-items:center;gap:3px;padding:3px 7px;border-radius:var(--dan-radius-sm);font-size:11px;font-weight:500;cursor:pointer;border:none;font-family:var(--dan-font);background:transparent;transition:background .1s}
+.t-action-btn.edit{color:var(--dan-primary-700)}.t-action-btn.edit:hover{background:var(--dan-info-bg)}
+.t-action-btn.del {color:var(--dan-danger)} .t-action-btn.del:hover {background:var(--dan-danger-bg)}
+
+.note-badge{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:26px;padding:0 6px;border-radius:7px;font-size:12.5px;font-weight:700;flex-shrink:0}
+.note-badge.good{background:var(--dan-success-bg);color:var(--dan-success)}
+.note-badge.mid {background:var(--dan-warning-bg);color:var(--dan-warning)}
+.note-badge.bad {background:var(--dan-danger-bg);  color:var(--dan-danger)}
+.note-badge.none{background:var(--dan-surface-alt); color:var(--dan-text-muted);font-size:10px}
+
+.typ-test        {background:var(--dan-info-bg);   color:var(--dan-info)}
+.typ-klassenarbeit{background:var(--dan-violet-bg);color:var(--dan-violet)}
+.typ-hausaufgabe {background:var(--dan-success-bg); color:var(--dan-success)}
+.typ-projekt     {background:var(--dan-warning-bg); color:var(--dan-warning)}
+.typ-sonstiges   {background:var(--dan-surface-alt);color:var(--dan-text-muted)}
+
+input[type="date"]::-webkit-calendar-picker-indicator,input[type="time"]::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.5}
+html[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator,html[data-theme="dark"] input[type="time"]::-webkit-calendar-picker-indicator{filter:invert(1) brightness(2);opacity:1}
+
+.fach-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;background:var(--dan-surface-alt);border-radius:var(--dan-radius-sm);font-size:13px;margin-bottom:6px}
+.fach-row:last-child{margin-bottom:0}
+.fach-row-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.fach-del-btn{font-size:11.5px;color:var(--dan-danger);background:none;border:none;cursor:pointer;font-family:var(--dan-font);padding:0}
+.fach-del-btn:hover{text-decoration:underline}
+.fach-confirm{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--dan-text);white-space:nowrap}
+.fach-confirm button{font-family:var(--dan-font);border:none;cursor:pointer;border-radius:6px;padding:3px 9px;font-size:11.5px;font-weight:600}
+.fach-confirm .ja{background:var(--dan-danger);color:#fff}
+.fach-confirm .nein{background:transparent;color:var(--dan-text-muted)}
+.fach-confirm .nein:hover{color:var(--dan-text)}
+
+.fd-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--dan-border)}
+.fd-row:last-child{border-bottom:none}
+</style>
+
+<div class="kal-wrap">
+
+    <div class="kal-grid">
+
+        
+        <div>
+            <div class="kal-head">
+                <div>
+                    <div class="dan-page-title">Noten & Termine</div>
+                </div>
+                <div class="kal-actions">
+                    <button class="btn btn-primary" onclick="openModal('modal-erstellen')">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        Neuer Termin
+                    </button>
+                </div>
+            </div>
+
+            <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:10px">
+                <form method="GET" class="kal-jahr-form">
+                    <div class="filter-label" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--dan-text-muted);margin-bottom:4px">Ausbildungsjahr</div>
+                    <select name="jahr" class="dan-select" onchange="this.form.submit()">
+                        <% for (const [j, label] of entries(jahre)) { %>
+                            <option value="<%= j %>" <%= (j === jahr) ? 'selected' : '' %>><%= j %>. Ausbildungsjahr<%= label ? ' (' + label + ')' : '' %></option>
+                        <% } %>
+                    </select>
+                </form>
+                <button class="btn btn-secondary" onclick="openModal('modal-fach')">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                    Fächer verwalten
+                </button>
+            </div>
+        </div>
+
+        <% if (session('success')) { %>
+            <div class="dan-alert success">
+                <div class="dan-alert-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+                <div class="dan-alert-title" style="font-weight:500"><%= session('success') %></div>
+            </div>
+        <% } %>
+
+        
+        <div class="card" style="padding:14px 20px">
+            <div class="stat-strip">
+                <div class="stat-strip-item">
+                    <div>
+                        <div style="display:flex;align-items:center;gap:8px">
+                            <div class="stat-strip-value"><%= stats['gesamtdurchschnitt'] ?? '—' %></div>
+                            <% if (stats['gesamtdurchschnitt']) { %>
+                                <span class="pill pill-success" style="padding:2px 8px;font-size:11px"><%= kal_notenlabel(stats['gesamtdurchschnitt']) %></span>
+                            <% } %>
+                        </div>
+                        <div class="stat-strip-label">Gesamtdurchschnitt · Basierend auf <%= stats['anzahlNoten'] %> <%= kal_plural('Note', stats['anzahlNoten']) %> in <%= stats['anzahlFaecher'] %> <%= stats['anzahlFaecher'] === 1 ? 'Fach' : 'Fächern' %></div>
+                    </div>
+                </div>
+                <div class="stat-strip-divider"></div>
+                <div class="stat-strip-item">
+                    <div>
+                        <div class="stat-strip-value"><%= stats['anzahlFaecher'] %></div>
+                        <div class="stat-strip-label">Fächer · Aktive Fächer</div>
+                    </div>
+                </div>
+                <div class="stat-strip-divider"></div>
+                <div class="stat-strip-item">
+                    <div>
+                        <div class="stat-strip-value"><%= stats['anzahlNoten'] %></div>
+                        <div class="stat-strip-label">Noten · In diesem Ausbildungsjahr</div>
+                    </div>
+                </div>
+                <div class="stat-strip-divider"></div>
+                <div class="stat-strip-item stat-strip-item-wide">
+                    <% // Fortschritt aus vergangenen/gesamten Wochen (nicht aus der Jahresnummer).
+                        const fortschrittProzent = stats['wochenGesamt']
+                            ? min(100, Math.round(stats['wochenAbgeschlossen'] / stats['wochenGesamt'] * 100))
+                            : null; %>
+                    <div style="width:100%">
+                        <div class="stat-strip-value"><%= fortschrittProzent !== null ? fortschrittProzent + '%' : '—' %></div>
+                        <div class="stat-strip-label" style="margin-bottom:6px">
+                            Ausbildungsfortschritt
+                            <% if (stats['wochenGesamt']) { %>
+                                · <%= stats['wochenAbgeschlossen'] %> von <%= stats['wochenGesamt'] %> Wochen
+                            <% } %>
+                            <span style="opacity:.75">(<%= stats['aktuellesJahr'] %>. Jahr von <%= stats['anzahlJahre'] %>)</span>
+                        </div>
+                        <div style="height:6px;background:var(--dan-surface-alt);border-radius:99px;overflow:hidden">
+                            <div style="height:100%;width:<%= fortschrittProzent ?? 0 %>%;background:var(--dan-primary-600);border-radius:99px"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="card">
+            <div class="card-header bordered">
+                <span class="card-title">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                    Meine Fächer
+                </span>
+            </div>
+            <div class="card-body" style="padding-top:16px">
+                <div class="fach-grid">
+                    <% if (count(faecher)) { for (const [i, fach] of entries(faecher)) { %>
+                        <% const accent = ['fc-petrol','fc-violet','fc-amber','fc-info'][i % 4];
+                            const notenDatenFach = notenProFach.get(fach.name); %>
+                        <div class="fach-card <%= accent %>" onclick="openModal('modal-fach-<%= fach.id %>')" role="button" tabindex="0">
+                            <div class="fach-card-top">
+                                <div class="fach-card-icon">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                                </div>
+                                <svg class="fach-card-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                            </div>
+                            <div class="fach-card-name"><%= fach.name %></div>
+                            <% if (fach.beschreibung) { %>
+                                <div class="fach-card-desc"><%= fach.beschreibung %></div>
+                            <% } %>
+                            <% if (notenDatenFach) { %>
+                                <div class="fach-card-avg">Ø <%= notenDatenFach['durchschnitt'] %></div>
+                                <div class="fach-card-count"><%= notenDatenFach['eintraege'].count() %> <%= kal_plural('Note', notenDatenFach['eintraege'].count()) %></div>
+                            <% } else { %>
+                                <div class="fach-card-avg muted">Noch keine Noten</div>
+                            <% } %>
+                        </div>
+                    <% } } else { %>
+                        <div class="empty-state" style="grid-column:1/-1;text-align:center;padding:20px">Noch keine Fächer für dieses Ausbildungsjahr angelegt.</div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="kal-two-col">
+            
+            <div class="card">
+                <div class="card-header bordered">
+                    <span class="card-title">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        Kommende Termine
+                    </span>
+                    <span style="font-size:11.5px;color:var(--dan-text-muted)"><%= kommend.count() %></span>
+                </div>
+                <% if (count(kommend)) { for (const eintrag of iter(kommend)) { %>
+                    <div class="tl-row">
+                        <div class="tl-date">
+                            <div class="d"><%= eintrag.datum.format('d') %></div>
+                            <div class="m"><%= kal_monat(eintrag.datum.month) %></div>
+                        </div>
+                        <div class="tl-body">
+                            <span class="pill <%= 'typ-' + eintrag.typ %>" style="padding:2px 8px;font-size:11px"><%= ucfirst(eintrag.typ) %></span>
+                            <div class="tl-fach"><%= eintrag.fach %><%= eintrag.thema ? ' – ' + eintrag.thema : '' %></div>
+                            <div class="tl-actions">
+                                <button type="button" class="t-action-btn edit js-termin-edit"
+                                    data-id="<%= eintrag.id %>" data-fach="<%= eintrag.fach %>" data-typ="<%= eintrag.typ %>"
+                                    data-datum="<%= eintrag.datum.format('Y-m-d') %>" data-uhrzeit="<%= eintrag.uhrzeit ? substr(eintrag.uhrzeit, 0, 5) : '' %>"
+                                    data-thema="<%= eintrag.thema ?? '' %>" data-lernnotizen="<%= eintrag.lernnotizen ?? '' %>" data-note="<%= eintrag.note ?? '' %>">
+                                    Bearbeiten
+                                </button>
+                                <form method="POST" action="<%= route('kalender.destroy', eintrag.id) %>" onsubmit="return confirm('Termin löschen?')">
+                                     <input type="hidden" name="_method" value="DELETE">
+                                    <button class="t-action-btn del" type="submit">Löschen</button>
+                                </form>
+                            </div>
+                        </div>
+                        <% if (eintrag.uhrzeit) { %>
+                            <div class="tl-time"><%= substr(eintrag.uhrzeit, 0, 5) %> Uhr</div>
+                        <% } %>
+                    </div>
+                <% } } else { %>
+                    <div class="empty-state" style="padding:24px 18px;text-align:center">Keine kommenden Termine.</div>
+                <% } %>
+            </div>
+
+            
+            <div class="card">
+                <div class="card-header bordered">
+                    <span class="card-title">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 8 14"/></svg>
+                        Letzte Termine
+                    </span>
+                    <span style="font-size:11.5px;color:var(--dan-text-muted)"><%= vergangen.count() %></span>
+                </div>
+                <% if (count(vergangen)) { for (const eintrag of iter(vergangen)) { %>
+                    <div class="tl-row">
+                        <div class="tl-date">
+                            <div class="d"><%= eintrag.datum.format('d') %></div>
+                            <div class="m"><%= kal_monat(eintrag.datum.month) %></div>
+                        </div>
+                        <div class="tl-body">
+                            <span class="pill <%= 'typ-' + eintrag.typ %>" style="padding:2px 8px;font-size:11px"><%= ucfirst(eintrag.typ) %></span>
+                            <div class="tl-fach"><%= eintrag.fach %><%= eintrag.thema ? ' – ' + eintrag.thema : '' %></div>
+                            <div class="tl-actions">
+                                <button type="button" class="t-action-btn edit js-termin-edit"
+                                    data-id="<%= eintrag.id %>" data-fach="<%= eintrag.fach %>" data-typ="<%= eintrag.typ %>"
+                                    data-datum="<%= eintrag.datum.format('Y-m-d') %>" data-uhrzeit="<%= eintrag.uhrzeit ? substr(eintrag.uhrzeit, 0, 5) : '' %>"
+                                    data-thema="<%= eintrag.thema ?? '' %>" data-lernnotizen="<%= eintrag.lernnotizen ?? '' %>" data-note="<%= eintrag.note ?? '' %>">
+                                    Bearbeiten
+                                </button>
+                                <form method="POST" action="<%= route('kalender.destroy', eintrag.id) %>" onsubmit="return confirm('Termin löschen?')">
+                                     <input type="hidden" name="_method" value="DELETE">
+                                    <button class="t-action-btn del" type="submit">Löschen</button>
+                                </form>
+                            </div>
+                        </div>
+                        <% if (eintrag.note !== null) { %>
+                            <div class="note-badge <%= kal_notecls(eintrag.note) %>"><%= eintrag.note %></div>
+                        <% } else { %>
+                            <div class="note-badge none">—</div>
+                        <% } %>
+                    </div>
+                <% } } else { %>
+                    <div class="empty-state" style="padding:24px 18px;text-align:center">Keine vergangenen Termine.</div>
+                <% } %>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+<div id="modal-fach" class="modal-bd">
+    <div class="modal">
+        <div class="modal-hd">
+            <span class="modal-title">Fächer verwalten</span>
+            <button class="modal-x" onclick="closeModal('modal-fach')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>
+        <form id="form-fach" method="POST" action="<%= route('kalender.fach.store') %>">
+            
+            <div class="modal-body">
+                <input type="hidden" name="ausbildungsjahr" value="<%= jahr %>">
+                <div class="dan-field">
+                    <label class="dan-label">Name / Kürzel</label>
+                    <input type="text" name="name" id="neues-fach-name" class="dan-input" placeholder="z.B. LF 1" required autofocus>
+                </div>
+                <div class="dan-field">
+                    <label class="dan-label">Bezeichnung <span style="font-weight:400;color:var(--dan-text-muted)">(optional)</span></label>
+                    <input type="text" name="beschreibung" id="neues-fach-beschreibung" class="dan-input" placeholder="z.B. Einführung in IoT">
+                </div>
+                <div id="fach-form-fehler" class="dan-field-error" style="display:none"></div>
+                <button type="submit" class="btn btn-primary" style="align-self:flex-start">Hinzufügen</button>
+            </div>
+        </form>
+        <div class="modal-body" style="padding-top:0">
+            <div class="dan-label" style="margin-bottom:6px">Fächer in <%= jahr %>. Ausbildungsjahr</div>
+            <div id="faecher-liste" style="display:flex;flex-direction:column;gap:6px">
+                <% if (count(faecher)) { for (const fach of iter(faecher)) { %>
+                    <div class="fach-row" data-fach-row="<%= fach.id %>">
+                        <span><%= fach.name %><%= fach.beschreibung ? ' – ' + fach.beschreibung : '' %></span>
+                        <span class="fach-row-actions">
+                            <button type="button" class="fach-del-btn" data-fach-id="<%= fach.id %>" onclick="fachLoeschenAnfragen(this)">Löschen</button>
+                        </span>
+                    </div>
+                <% } } else { %>
+                    <p id="faecher-leer-hinweis" style="font-size:13px;color:var(--dan-text-muted)">Noch keine Fächer in diesem Ausbildungsjahr.</p>
+                <% } %>
+            </div>
+        </div>
+        <div class="modal-ft">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('modal-fach')">Schließen</button>
+        </div>
+    </div>
+</div>
+
+
+<div id="modal-erstellen" class="modal-bd">
+    <div class="modal">
+        <div class="modal-hd">
+            <span class="modal-title">Neuer Termin</span>
+            <button class="modal-x" onclick="closeModal('modal-erstellen')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>
+        <form method="POST" action="<%= route('kalender.store') %>">
+            
+            <input type="hidden" name="_form" value="erstellen">
+            <input type="hidden" name="ausbildungsjahr" value="<%= jahr %>">
+            <div class="modal-body">
+                <div class="dan-field">
+                    <label class="dan-label">Fach</label>
+                    <% if (faecher.count()) { %>
+                        <select name="fach" id="fach-select-erstellen" class="dan-select" required>
+                            <option value="">— Fach wählen —</option>
+                            <% for (const fach of iter(faecher)) { %>
+                                <option value="<%= fach.name %>" <%= (old('fach') === fach.name) ? 'selected' : '' %>><%= fach.name %></option>
+                            <% } %>
+                        </select>
+                    <% } else { %>
+                        <p style="font-size:12.5px;color:var(--dan-text-muted)">Bitte zuerst ein Fach anlegen.</p>
+                        <input type="hidden" name="fach" id="fach-select-erstellen" value="Allgemein">
+                    <% } %>
+                    <% if (errors['fach']) { const message = errors['fach']; %><div class="dan-field-error"><%= message %></div><% } %>
+                </div>
+                <div class="dan-field">
+                    <label class="dan-label">Typ</label>
+                    <select name="typ" class="dan-select">
+                        <% for (const [value, label] of Object.entries({'test':'Test','klassenarbeit':'Klassenarbeit','hausaufgabe':'Hausaufgabe','projekt':'Projekt','sonstiges':'Sonstiges'})) { %>
+                            <option value="<%= value %>" <%= (old('typ') === value) ? 'selected' : '' %>><%= label %></option>
+                        <% } %>
+                    </select>
+                </div>
+                <div class="dan-grid dan-grid-2">
+                    <div class="dan-field">
+                        <label class="dan-label">Datum</label>
+                        <input type="date" name="datum" class="dan-input" value="<%= old('datum') %>" required>
+                        <% if (errors['datum']) { const message = errors['datum']; %><div class="dan-field-error"><%= message %></div><% } %>
+                    </div>
+                    <div class="dan-field">
+                        <label class="dan-label">Uhrzeit <span style="font-weight:400;color:var(--dan-text-muted)">(optional)</span></label>
+                        <input type="time" name="uhrzeit" class="dan-input" value="<%= old('uhrzeit') %>">
+                        <% if (errors['uhrzeit']) { const message = errors['uhrzeit']; %><div class="dan-field-error"><%= message %></div><% } %>
+                    </div>
+                </div>
+                <div class="dan-field">
+                    <label class="dan-label">Thema <span style="font-weight:400;color:var(--dan-text-muted)">(optional)</span></label>
+                    <input type="text" name="thema" class="dan-input" placeholder="z.B. Kapitel 4 – Datenbanken" value="<%= old('thema') %>">
+                    <% if (errors['thema']) { const message = errors['thema']; %><div class="dan-field-error"><%= message %></div><% } %>
+                </div>
+                <div class="dan-field">
+                    <label class="dan-label">Lernnotizen <span style="font-weight:400;color:var(--dan-text-muted)">(optional)</span></label>
+                    <textarea name="lernnotizen" class="dan-textarea" placeholder="Stichpunkte zum Lernen…"><%= old('lernnotizen') %></textarea>
+                    <% if (errors['lernnotizen']) { const message = errors['lernnotizen']; %><div class="dan-field-error"><%= message %></div><% } %>
+                </div>
+                <div class="dan-field">
+                    <label class="dan-label">Note <span style="font-weight:400;color:var(--dan-text-muted)">(optional, nach dem Termin)</span></label>
+                    <input type="number" name="note" step="0.5" min="1" max="6" class="dan-input" placeholder="z.B. 1.5" value="<%= old('note') %>">
+                    <% if (errors['note']) { const message = errors['note']; %><div class="dan-field-error"><%= message %></div><% } %>
+                </div>
+            </div>
+            <div class="modal-ft">
+                <button type="button" onclick="closeModal('modal-erstellen')" class="btn btn-secondary">Abbrechen</button>
+                <button type="submit" class="btn btn-primary">Erstellen</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<div id="modal-bearbeiten" class="modal-bd">
+    <div class="modal">
+        <div class="modal-hd">
+            <span class="modal-title">Termin bearbeiten</span>
+            <button class="modal-x" onclick="closeModal('modal-bearbeiten')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>
+        <form method="POST" id="form-bearbeiten">
+             <input type="hidden" name="_method" value="PATCH">
+            <input type="hidden" name="_form" value="bearbeiten">
+            <input type="hidden" name="_edit_id" id="edit-id" value="<%= old('_edit_id') %>">
+            <div class="modal-body">
+                <div class="dan-field">
+                    <label class="dan-label">Fach</label>
+                    <% if (faecher.count()) { %>
+                        <select name="fach" id="edit-fach" class="dan-select" required>
+                            <% for (const fach of iter(faecher)) { %>
+                                <option value="<%= fach.name %>"><%= fach.name %></option>
+                            <% } %>
+                        </select>
+                    <% } else { %>
+                        <input type="text" name="fach" id="edit-fach" class="dan-input" required>
+                    <% } %>
+                    <% if (errors['fach']) { const message = errors['fach']; %><div class="dan-field-error"><%= message %></div><% } %>
+                </div>
+                <div class="dan-field">
+                    <label class="dan-label">Typ</label>
+                    <select name="typ" id="edit-typ" class="dan-select">
+                        <option value="test">Test</option>
+                        <option value="klassenarbeit">Klassenarbeit</option>
+                        <option value="hausaufgabe">Hausaufgabe</option>
+                        <option value="projekt">Projekt</option>
+                        <option value="sonstiges">Sonstiges</option>
+                    </select>
+                </div>
+                <div class="dan-grid dan-grid-2">
+                    <div class="dan-field">
+                        <label class="dan-label">Datum</label>
+                        <input type="date" name="datum" id="edit-datum" class="dan-input" required>
+                        <% if (errors['datum']) { const message = errors['datum']; %><div class="dan-field-error"><%= message %></div><% } %>
+                    </div>
+                    <div class="dan-field">
+                        <label class="dan-label">Uhrzeit <span style="font-weight:400;color:var(--dan-text-muted)">(optional)</span></label>
+                        <input type="time" name="uhrzeit" id="edit-uhrzeit" class="dan-input">
+                        <% if (errors['uhrzeit']) { const message = errors['uhrzeit']; %><div class="dan-field-error"><%= message %></div><% } %>
+                    </div>
+                </div>
+                <div class="dan-field">
+                    <label class="dan-label">Thema</label>
+                    <input type="text" name="thema" id="edit-thema" class="dan-input">
+                    <% if (errors['thema']) { const message = errors['thema']; %><div class="dan-field-error"><%= message %></div><% } %>
+                </div>
+                <div class="dan-field">
+                    <label class="dan-label">Lernnotizen</label>
+                    <textarea name="lernnotizen" id="edit-lernnotizen" class="dan-textarea"></textarea>
+                    <% if (errors['lernnotizen']) { const message = errors['lernnotizen']; %><div class="dan-field-error"><%= message %></div><% } %>
+                </div>
+                <div class="dan-field">
+                    <label class="dan-label">Note <span style="font-weight:400;color:var(--dan-text-muted)">(optional)</span></label>
+                    <input type="number" name="note" id="edit-note" step="0.5" min="1" max="6" class="dan-input">
+                    <% if (errors['note']) { const message = errors['note']; %><div class="dan-field-error"><%= message %></div><% } %>
+                </div>
+            </div>
+            <div class="modal-ft">
+                <button type="button" onclick="closeModal('modal-bearbeiten')" class="btn btn-secondary">Abbrechen</button>
+                <button type="submit" class="btn btn-primary">Speichern</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<% for (const fach of iter(faecher)) { %>
+    <% const fachEintraege = kommend.concat(vergangen).where('fach', fach.name).sortByDesc('datum').values(); %>
+    <div id="modal-fach-<%= fach.id %>" class="modal-bd">
+        <div class="modal" style="max-width:560px">
+            <div class="modal-hd">
+                <span class="modal-title"><%= fach.name %><%= fach.beschreibung ? ' · ' + fach.beschreibung : '' %></span>
+                <button class="modal-x" onclick="closeModal('modal-fach-<%= fach.id %>')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            </div>
+            <div class="modal-body">
+                <% if (count(fachEintraege)) { for (const e of iter(fachEintraege)) { %>
+                    <div class="fd-row">
+                        <div style="min-width:0">
+                            <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+                                <span class="pill <%= 'typ-' + e.typ %>" style="padding:2px 8px;font-size:11px"><%= ucfirst(e.typ) %></span>
+                                <span style="font-size:12px;color:var(--dan-text-muted)"><%= e.datum.format('d.m.Y') %></span>
+                            </div>
+                            <% if (e.thema) { %><div style="font-size:13px;color:var(--dan-text);margin-top:4px"><%= e.thema %></div><% } %>
+                            <% if (e.lernnotizen) { %><div style="font-size:11.5px;color:var(--dan-text-muted);font-style:italic;margin-top:2px"><%= e.lernnotizen %></div><% } %>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+                            <% if (e.note !== null) { %>
+                                <div class="note-badge <%= kal_notecls(e.note) %>"><%= e.note %></div>
+                            <% } else { %>
+                                <div class="note-badge none">—</div>
+                            <% } %>
+                            <button type="button" class="t-action-btn edit js-termin-edit"
+                                data-id="<%= e.id %>" data-fach="<%= e.fach %>" data-typ="<%= e.typ %>"
+                                data-datum="<%= e.datum.format('Y-m-d') %>" data-uhrzeit="<%= e.uhrzeit ? substr(e.uhrzeit, 0, 5) : '' %>"
+                                data-thema="<%= e.thema ?? '' %>" data-lernnotizen="<%= e.lernnotizen ?? '' %>" data-note="<%= e.note ?? '' %>"
+                                data-close="modal-fach-<%= fach.id %>">
+                                Bearbeiten
+                            </button>
+                        </div>
+                    </div>
+                <% } } else { %>
+                    <div class="empty-state" style="text-align:center;padding:10px 0">Noch keine Noten in diesem Fach.</div>
+                <% } %>
+            </div>
+            <div class="modal-ft">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('modal-fach-<%= fach.id %>')">Schließen</button>
+                <button type="button" class="btn btn-primary js-neue-note" data-fach-modal="modal-fach-<%= fach.id %>" data-fach-name="<%= fach.name %>">+ Note/Termin</button>
+            </div>
+        </div>
+    </div>
+<% } %>
+
+<script>
+function openModal(id)  { document.getElementById(id).classList.add('open') }
+function closeModal(id) { document.getElementById(id).classList.remove('open') }
+document.querySelectorAll('.modal-bd').forEach(el =>
+    el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open') })
+)
+
+function openErstellenFuerFach(fachName) {
+    const sel = document.getElementById('fach-select-erstellen')
+    if (sel) sel.value = fachName
+    openModal('modal-erstellen')
+}
+
+// data-* + addEventListener statt Roh-Interpolation von $fach->name in einem
+// onclick-Attribut - Fachnamen sind freier Text und duerften sonst aus dem
+// JS-String-Literal ausbrechen (z.B. ein Name wie x'); alert(1); //).
+document.querySelectorAll('.js-neue-note').forEach(btn => {
+    btn.addEventListener('click', () => {
+        closeModal(btn.dataset.fachModal)
+        openErstellenFuerFach(btn.dataset.fachName)
+    })
+})
+
+document.querySelectorAll('.js-termin-edit').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const d = btn.dataset
+        if (d.close) closeModal(d.close)
+        document.getElementById('edit-fach').value = d.fach
+        document.getElementById('edit-typ').value = d.typ
+        document.getElementById('edit-datum').value = d.datum
+        document.getElementById('edit-uhrzeit').value = d.uhrzeit
+        document.getElementById('edit-thema').value = d.thema
+        document.getElementById('edit-lernnotizen').value = d.lernnotizen
+        document.getElementById('edit-note').value = d.note
+        document.getElementById('edit-id').value = d.id
+        document.getElementById('form-bearbeiten').action = '/kalender/' + d.id
+        openModal('modal-bearbeiten')
+    })
+})
+
+<% if (errors.any()) { %>
+    
+    <% if (old('_form') === 'bearbeiten') { %>
+        document.getElementById('form-bearbeiten').action = '/kalender/' + '<%= old('_edit_id') %>'
+        openModal('modal-bearbeiten')
+    <% } else { %>
+        openModal('modal-erstellen')
+    <% } %>
+<% } %>
+
+// Faecher verwalten: Hinzufuegen/Loeschen laeuft komplett ohne Seitenneuladen,
+// damit das Modal dabei offen bleibt (kein natives confirm(), keine ungewollte
+// Modal-Schliessung).
+const csrfToken = document.querySelector('meta[name="csrf-token"]').content
+
+document.getElementById('form-fach').addEventListener('submit', function (e) {
+    e.preventDefault()
+    const form = e.target
+    const nameInput = document.getElementById('neues-fach-name')
+    const submitBtn = form.querySelector('button[type="submit"]')
+    submitBtn.disabled = true
+
+    const fehlerBox = document.getElementById('fach-form-fehler')
+    fehlerBox.style.display = 'none'
+
+    fetch(form.action, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+        body: new URLSearchParams(new FormData(form)),
+    })
+        .then(r => r.ok ? r.json() : r.json().then(body => Promise.reject(body)))
+        .then(data => {
+            const hinweis = document.getElementById('faecher-leer-hinweis')
+            if (hinweis) hinweis.remove()
+
+            const row = document.createElement('div')
+            row.className = 'fach-row'
+            row.dataset.fachRow = data.id
+            const label = document.createElement('span')
+            label.textContent = data.beschreibung ? `${data.name} – ${data.beschreibung}` : data.name
+            const actions = document.createElement('span')
+            actions.className = 'fach-row-actions'
+            actions.innerHTML = `<button type="button" class="fach-del-btn" data-fach-id="${data.id}" onclick="fachLoeschenAnfragen(this)">Löschen</button>`
+            row.append(label, actions)
+            document.getElementById('faecher-liste').appendChild(row)
+
+            ;['fach-select-erstellen', 'edit-fach'].forEach(selId => {
+                const sel = document.getElementById(selId)
+                if (sel && sel.tagName === 'SELECT' && ![...sel.options].some(o => o.value === data.name)) {
+                    const o = document.createElement('option')
+                    o.value = data.name
+                    o.textContent = data.name
+                    sel.appendChild(o)
+                }
+            })
+
+            form.reset()
+            nameInput.focus()
+        })
+        .catch(body => {
+            const nachricht = body?.errors ? Object.values(body.errors).flat().join(' ') : 'Fach konnte nicht angelegt werden.'
+            fehlerBox.textContent = nachricht
+            fehlerBox.style.display = 'block'
+        })
+        .finally(() => { submitBtn.disabled = false })
+})
+
+function fachLoeschenAnfragen(btn) {
+    const row = btn.closest('.fach-row')
+    const actions = row.querySelector('.fach-row-actions')
+    actions.innerHTML = ''
+    const confirmEl = document.createElement('span')
+    confirmEl.className = 'fach-confirm'
+    confirmEl.textContent = 'Wirklich löschen? '
+    const jaBtn = document.createElement('button')
+    jaBtn.type = 'button'; jaBtn.className = 'ja'; jaBtn.textContent = 'Ja'
+    const neinBtn = document.createElement('button')
+    neinBtn.type = 'button'; neinBtn.className = 'nein'; neinBtn.textContent = 'Nein'
+    confirmEl.append(jaBtn, neinBtn)
+    actions.appendChild(confirmEl)
+
+    jaBtn.addEventListener('click', () => fachLoeschenBestaetigt(row, btn.dataset.fachId))
+    neinBtn.addEventListener('click', () => { actions.innerHTML = ''; actions.appendChild(btn) })
+}
+
+function fachLoeschenBestaetigt(row, fachId) {
+    fetch(`/kalender/fach/${fachId}`, {
+        method: 'DELETE',
+        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+    })
+        .then(r => {
+            if (!r.ok) throw new Error()
+            row.remove()
+            const liste = document.getElementById('faecher-liste')
+            if (!liste.querySelector('.fach-row')) {
+                const p = document.createElement('p')
+                p.id = 'faecher-leer-hinweis'
+                p.style.cssText = 'font-size:13px;color:var(--dan-text-muted)'
+                p.textContent = 'Noch keine Fächer in diesem Ausbildungsjahr.'
+                liste.appendChild(p)
+            }
+        })
+        .catch(() => alert('Fach konnte nicht gelöscht werden.'))
+}
+</script>
