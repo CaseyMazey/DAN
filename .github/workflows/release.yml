@@ -58,5 +58,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
         run: |
+          VERSION="${TAG#v}"
+          # Feste Namen fuer die Download-Knoepfe in der README (zeigen immer auf die neueste Version)
+          cp "out/DAN-Setup-${VERSION}.exe"               out/DAN-Setup.exe
+          cp "out/DAN-mac-arm64-${VERSION}.dmg"           out/DAN-mac-arm64.dmg
+          cp "out/DAN-mac-x64-${VERSION}.dmg"             out/DAN-mac-x64.dmg
+          cp "out/DAN-linux-x86_64-${VERSION}.AppImage"   out/DAN-linux-x86_64.AppImage
+          cp "out/DAN-linux-amd64-${VERSION}.deb"         out/DAN-linux-amd64.deb
           ls -la out
-          gh release create "$TAG" out/* --title "DAN ${TAG#v}" --generate-notes --verify-tag
+          gh release create "$TAG" out/* --title "DAN ${VERSION}" --generate-notes --verify-tag
