@@ -47,31 +47,25 @@ test.before(async () => {
 });
 test.after(() => { server.close(); app.locals.db.close(); fs.rmSync(dataDir, { recursive: true, force: true }); });
 
-test('Ersteinrichtung, Login und alle Seiten', async () => {
-  let r = await req('GET', '/login');
+test('Ersteinrichtung ohne Login und alle Seiten', async () => {
+  let r = await req('GET', '/dashboard');
   assert.strictEqual(r.headers.get('location'), '/einrichten');
 
-  r = await req('POST', '/einrichten', { vorname: 'Max', nachname: 'Muster', email: 'Max@Example.de', password: 'kurz', password_confirmation: 'kurz', ausbildungsbeginn: '2025-09-01' });
+  r = await req('POST', '/einrichten', { vorname: 'Max', nachname: 'Muster', ausbildungsbeginn: 'kein-datum' });
   assert.strictEqual(r.status, 302);
-  assert.match(await html('/einrichten'), /mindestens 8 Zeichen/);
+  assert.match(await html('/einrichten'), /kein gültiges Datum/);
 
   const beginn = D.now().subDays(400).toDateString();
-  r = await req('POST', '/einrichten', { vorname: 'Max', nachname: 'Muster', email: 'Max@Example.de', password: 'geheim123', password_confirmation: 'geheim123', ausbildungsbeginn: beginn, ausbildungsende: D.now().addDays(700).toDateString() });
+  r = await req('POST', '/einrichten', { vorname: 'Max', nachname: 'Muster', ausbildungsbeginn: beginn, ausbildungsende: D.now().addDays(700).toDateString(), abteilung: 'IT' });
   assert.strictEqual(r.headers.get('location'), '/dashboard');
   assert.match(await html('/dashboard'), /Hallo, Max/);
 
-  // Einrichten ist danach gesperrt
+  // Einrichten ist danach gesperrt, ohne Sitzung geht es direkt ins Dashboard
   r = await req('GET', '/einrichten');
   assert.strictEqual(r.status, 302);
-
-  // Logout + Login (E-Mail case-insensitiv)
-  await req('POST', '/logout', {});
-  r = await req('GET', '/dashboard');
-  assert.strictEqual(r.headers.get('location'), '/login');
-  r = await req('POST', '/login', { email: 'max@example.de', password: 'falsch' });
-  assert.match(await html('/login'), /E-Mail oder Passwort ist falsch/);
-  r = await req('POST', '/login', { email: 'MAX@example.de', password: 'geheim123', remember: 'on' });
-  assert.strictEqual(r.headers.get('location'), '/dashboard');
+  for (const k of Object.keys(cookies)) delete cookies[k];
+  assert.match(await html('/dashboard'), /Hallo, Max/);
+  assert.doesNotMatch(await html('/dashboard'), /Abmelden/);
 
   // Aufgaben
   assert.match(await html('/aufgaben'), /Keine Aufgaben/);
@@ -158,14 +152,30 @@ test('Ersteinrichtung, Login und alle Seiten', async () => {
 
   // Profil
   await html('/profile');
-  await req('POST', '/profile', { _method: 'PATCH', vorname: 'Maxi', nachname: 'Muster', email: 'max@example.de', ausbildungsbeginn: beginn, abteilung: 'IT-Service' });
+  await req('POST', '/profile', { _method: 'PATCH', vorname: 'Maxi', nachname: 'Muster', ausbildungsbeginn: beginn, abteilung: 'IT-Service' });
   assert.match(await html('/profile'), /IT-Service/);
-  r = await req('POST', '/profile/password', { _method: 'PATCH', current_password: 'falsch', password: 'neuespasswort', password_confirmation: 'neuespasswort' });
-  assert.match(await html('/profile'), /aktuelle Passwort ist falsch/);
-  await req('POST', '/profile/password', { _method: 'PATCH', current_password: 'geheim123', password: 'neuespasswort', password_confirmation: 'neuespasswort' });
-  assert.match(await html('/profile'), /Passwort erfolgreich/);
 
   // 404 fuer fremde/unbekannte IDs
   r = await req('GET', '/wochenbericht/999999');
   assert.strictEqual(r.status, 404);
+});
+
+test('Lokaler Server nimmt nur Anfragen aus dem DAN-Fenster an', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dan-guard-'));
+  const geschuetzt = createApp({ dataDir: dir, appToken: 'geheim' });
+  const s = await new Promise(r => { const x = geschuetzt.listen(0, '127.0.0.1', () => r(x)); });
+  const url = `http://127.0.0.1:${s.address().port}`;
+  try {
+    assert.strictEqual((await fetch(url + '/dashboard', { redirect: 'manual' })).status, 403);
+    assert.strictEqual((await fetch(url + '/einrichten', { method: 'POST', redirect: 'manual', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'vorname=X' })).status, 403);
+    assert.strictEqual((await fetch(url + '/dashboard', { redirect: 'manual', headers: { Cookie: 'dan_app=falsch' } })).status, 403);
+    // DNS-Rebinding: fremder Host-Header (fetch erlaubt das Setzen nicht, daher roh)
+    const status = await new Promise((resolve, reject) => {
+      require('node:http').get({ host: '127.0.0.1', port: s.address().port, path: '/dashboard', headers: { Cookie: 'dan_app=geheim', Host: 'boese.example' } }, (res) => { res.resume(); resolve(res.statusCode); }).on('error', reject);
+    });
+    assert.strictEqual(status, 403);
+    assert.strictEqual((await fetch(url + '/dashboard', { redirect: 'manual', headers: { Cookie: 'dan_app=geheim' } })).status, 302);
+  } finally {
+    s.close(); geschuetzt.locals.db.close(); fs.rmSync(dir, { recursive: true, force: true });
+  }
 });

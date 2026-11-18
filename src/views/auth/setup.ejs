@@ -148,8 +148,8 @@
             </div>
         </div>
         <div class="invite-banner">
-            <strong>Willkommen bei DAN!</strong> Lege dein Konto an. Es wird nur auf diesem Computer gespeichert –
-            beim nächsten Start meldest du dich mit E-Mail und Passwort an.
+            <strong>Willkommen bei DAN!</strong> Noch kurz deine Angaben – alles wird nur auf diesem Computer
+            gespeichert. Danach öffnet sich DAN bei jedem Start direkt.
         </div>
 
         <% if (Object.keys(errors).length) { %>
@@ -172,18 +172,8 @@
                 </div>
 
                 <div>
-                    <div class="field-label">E-Mail</div>
-                    <input type="email" name="email" class="fi" value="<%= old('email') %>" required autocomplete="username" placeholder="max@beispiel.de">
-                </div>
-
-                <div>
-                    <div class="field-label">Passwort</div>
-                    <input type="password" name="password" class="fi" required minlength="8" autocomplete="new-password" placeholder="Mindestens 8 Zeichen">
-                </div>
-
-                <div>
-                    <div class="field-label">Passwort bestätigen</div>
-                    <input type="password" name="password_confirmation" class="fi" required autocomplete="new-password" placeholder="Passwort wiederholen">
+                    <div class="field-label">Ausbildende Abteilung (optional)</div>
+                    <input type="text" name="abteilung" class="fi" value="<%= old('abteilung') %>" placeholder="z.B. IT Anwendungsentwicklung">
                 </div>
 
                 <div class="divider"></div>
@@ -199,7 +189,7 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn-submit">Konto erstellen</button>
+                <button type="submit" class="btn-submit">Los geht's</button>
             </div>
         </form>
     </div>

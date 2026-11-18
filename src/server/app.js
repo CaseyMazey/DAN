@@ -9,7 +9,7 @@ const ejs = require('ejs');
 const { Db } = require('./db');
 const { D } = require('./dates');
 const { C, Group, collect } = require('./collection');
-const { sessions } = require('./auth');
+const { sessions, nurDanFenster } = require('./auth');
 const logic = require('./logic');
 
 const VIEWS = path.join(__dirname, '..', 'views');
@@ -18,7 +18,7 @@ const PUBLIC = path.join(__dirname, '..', 'public');
 // ── Routen-Namen wie in Laravel (route('name', id)) ─────────────────────
 const ROUTES = {
   'dashboard': '/dashboard',
-  'login': '/login', 'setup': '/einrichten', 'setup.store': '/einrichten', 'logout': '/logout',
+  'setup': '/einrichten', 'setup.store': '/einrichten',
   'wochenbericht.index': '/wochenbericht', 'wochenbericht.aktuell': '/wochenbericht/aktuell',
   'wochenbericht.zeitraeume': '/wochenbericht/zeitraeume', 'wochenbericht.zeitraeume.erstellen': '/wochenbericht/zeitraeume',
   'wochenbericht.zeitraeume.update': '/wochenbericht/zeitraeume/:id', 'wochenbericht.zeitraeume.loeschen': '/wochenbericht/zeitraeume/:id',
@@ -32,7 +32,7 @@ const ROUTES = {
   'aufgaben.index': '/aufgaben', 'aufgaben.store': '/aufgaben', 'aufgaben.config': '/aufgaben/config',
   'aufgaben.update': '/aufgaben/:id', 'aufgaben.destroy': '/aufgaben/:id', 'aufgaben.status': '/aufgaben/:id/status',
   'aufgaben.archivieren': '/aufgaben/:id/archivieren', 'aufgaben.wiederherstellen': '/aufgaben/:id/wiederherstellen',
-  'profile.edit': '/profile', 'profile.update': '/profile', 'profile.password': '/profile/password',
+  'profile.edit': '/profile', 'profile.update': '/profile',
   'profile.darkmode': '/profile/darkmode', 'profile.signatur': '/profile/signatur', 'profile.signatur.bild': '/profile/signatur/bild',
 };
 
@@ -76,12 +76,13 @@ const helpers = {
   nl2br: (s) => ejs.escapeXML(String(s ?? '')).replace(/\n/g, '<br>'),
 };
 
-function createApp({ dataDir, htmlToPdf }) {
+function createApp({ dataDir, appToken = null }) {
   fs.mkdirSync(path.join(dataDir, 'signaturen'), { recursive: true });
   const db = new Db(path.join(dataDir, 'dan.sqlite'));
   const app = express();
   app.disable('x-powered-by');
   app.set('etag', false);
+  app.use(nurDanFenster(appToken));
 
   app.use('/assets', express.static(path.join(PUBLIC, 'assets'), { maxAge: '1d' }));
   app.use(express.static(PUBLIC, { index: false }));
@@ -93,12 +94,11 @@ function createApp({ dataDir, htmlToPdf }) {
     if (req.method === 'POST' && typeof m === 'string' && ['PATCH', 'PUT', 'DELETE'].includes(m.toUpperCase())) req.method = m.toUpperCase();
     next();
   });
-  app.use(sessions(db));
+  app.use(sessions());
 
-  // Request-Kontext: angemeldeter Nutzer, Flash-Daten, render()/back()
+  // Request-Kontext: das (einzige) Konto, Flash-Daten, render()/back()
   app.use((req, res, next) => {
-    req.user = req.session.userId ? logic.enrichUser(db.get('SELECT * FROM users WHERE id = ?', req.session.userId)) : null;
-    if (req.session.userId && !req.user) req.session.userId = null;
+    req.user = logic.enrichUser(db.get('SELECT * FROM users ORDER BY id LIMIT 1'));
     const flash = req.session.flash || {};
     req.session.flash = {};
     req.wantsJson = () => /json/.test(req.get('Accept') || '') || req.xhr;
@@ -134,12 +134,13 @@ function createApp({ dataDir, htmlToPdf }) {
     next();
   });
 
-  const ctx = { db, logic, route, htmlToPdf, dataDir };
+  const ctx = { db, logic, route, dataDir };
+  // Keine Anmeldung: solange noch kein Konto eingerichtet ist, geht es zur Einrichtung.
   const guest = (req, res, next) => (req.user ? res.redirect('/dashboard') : next());
-  const auth = (req, res, next) => (req.user ? next() : req.wantsJson() ? res.status(401).json({ error: 'Nicht angemeldet' }) : res.redirect('/login'));
+  const auth = (req, res, next) => (req.user ? next() : req.wantsJson() ? res.status(409).json({ error: 'Noch nicht eingerichtet' }) : res.redirect('/einrichten'));
   const named = (name) => (req, res, next) => { req.routeName = name; next(); };
 
-  app.get('/', (req, res) => res.redirect(req.user ? '/dashboard' : '/login'));
+  app.get('/', (req, res) => res.redirect(req.user ? '/dashboard' : '/einrichten'));
   require('./routes/auth')(app, ctx, { guest, auth, named });
   require('./routes/dashboard')(app, ctx, { auth, named });
   require('./routes/wochenbericht')(app, ctx, { auth, named });

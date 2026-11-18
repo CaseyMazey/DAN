@@ -7,6 +7,9 @@ const { app, BrowserWindow, shell, dialog, Menu, session } = require('electron')
 const path = require('node:path');
 const fs = require('node:fs');
 
+// Fuer Tests: eigener Datenordner (DAN_USERDATA), damit eine installierte DAN-Instanz unberuehrt bleibt.
+if (process.env.DAN_USERDATA) app.setPath('userData', process.env.DAN_USERDATA);
+
 // Nur eine Instanz: ein zweiter Klick aufs Icon holt das offene Fenster nach vorn.
 if (!app.requestSingleInstanceLock()) {
   app.quit();
@@ -29,9 +32,14 @@ async function start() {
   fs.mkdirSync(dataDir, { recursive: true });
 
   const { createApp } = require('./server/app');
-  const web = createApp({ dataDir });
+  const { randomToken } = require('./server/auth');
+  // Zufaelliges Geheimnis pro Start: nur das DAN-Fenster bekommt es als Cookie,
+  // andere Programme oder Webseiten koennen den lokalen Server nicht benutzen.
+  const appToken = randomToken();
+  const web = createApp({ dataDir, appToken });
   const port = await lausche(web, PORT_WUNSCH).catch(() => lausche(web, 0));
   const url = `http://127.0.0.1:${port}`;
+  await session.defaultSession.cookies.set({ url, name: 'dan_app', value: appToken, httpOnly: true, sameSite: 'strict' });
 
   Menu.setApplicationMenu(null);
   downloadsEinrichten();

@@ -1,14 +1,17 @@
 # DAN – Digitaler Ausbildungsnachweis (Desktop)
 
 Lokale Einzelplatz-Version von DAN: eine Windows-App, die per Klick aufs Icon startet.
-Es gibt **kein PHP, kein XAMPP, keinen MySQL-Server**, keine Admins und keine Ausbilder,
-sondern nur dein eigenes Konto (E-Mail + Passwort).
+Es gibt **kein PHP, kein XAMPP, keinen MySQL-Server**, keine Admins, keine Ausbilder und keine Anmeldung:
+DAN öffnet sich direkt (geschützt wird es durch dein Windows-Konto).
 
 ## Installieren
 
-`dist/DAN-Setup-1.0.0.exe` doppelklicken. Das Setup installiert DAN für deinen
+`dist/DAN-Setup-<version>.exe` doppelklicken. Das Setup installiert DAN für deinen
 Windows-Benutzer und legt ein Icon auf dem Desktop und im Startmenü an.
-Beim ersten Start legst du dein Konto an, danach meldest du dich nur noch an.
+Beim ersten Start gibst du einmal Name und Ausbildungszeitraum ein, danach öffnet sich DAN direkt.
+
+Der lokale Server von DAN nimmt nur Anfragen aus dem DAN-Fenster an (zufälliger Schlüssel pro Start).
+Andere Programme und Webseiten im Browser kommen nicht an deine Daten.
 
 ## Wo liegen meine Daten?
 
@@ -28,8 +31,7 @@ node scripts/import-dan2.js --azubi 1
 ```
 
 Das Skript übernimmt Berichte, Einträge, Aufgaben, Noten, Fächer, Zeiträume und die Signatur eines
-Azubi-Kontos nach `%APPDATA%\DAN\daten`. Das bisherige Passwort gilt weiter und wird beim ersten
-Login auf das neue Verfahren umgestellt.
+Azubi-Kontos nach `%APPDATA%\DAN\daten`.
 
 ## Funktionen
 

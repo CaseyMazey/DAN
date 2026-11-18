@@ -6,7 +6,7 @@
 //
 // Ziel ist standardmaessig %APPDATA%\DAN\daten (der Ordner der installierten App).
 // DAN muss dabei geschlossen sein. Ohne --force bricht der Import ab, wenn dort
-// schon ein Konto existiert. Das bisherige DAN2-Passwort funktioniert weiter.
+// schon ein Konto existiert.
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -146,7 +146,7 @@ async function main() {
   db.close();
 
   console.log(`Import fertig nach ${ZIEL}`);
-  console.log(`Konto: ${u.vorname} ${u.nachname} <${u.email}> (bisheriges Passwort gilt weiter)`);
+  console.log(`Konto: ${u.vorname} ${u.nachname} <${u.email}>`);
   console.table(n);
 }
 

@@ -2,7 +2,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { validate } = require('../validate');
-const { hashPassword, verifyPassword } = require('../auth');
 
 module.exports = (app, { db, dataDir }, { auth, named }) => {
   app.get('/profile', auth, named('profile.edit'), (req, res) => {
@@ -13,28 +12,17 @@ module.exports = (app, { db, dataDir }, { auth, named }) => {
     const { ok, errors, data } = validate(req.body, {
       vorname: 'required|string|max:255',
       nachname: 'required|string|max:255',
-      email: 'required|email|max:255',
       ausbildungsbeginn: 'nullable|date',
       ausbildungsende: 'nullable|date|after:ausbildungsbeginn',
       abteilung: 'nullable|string|max:255',
     });
     if (!ok) return res.withErrors(errors);
     db.update('users', req.user.id, {
-      vorname: data.vorname, nachname: data.nachname, email: data.email.toLowerCase(),
+      vorname: data.vorname, nachname: data.nachname,
       ausbildungsbeginn: data.ausbildungsbeginn, ausbildungsende: data.ausbildungsende,
       abteilung: data.abteilung,
     });
     res.flash('status', 'profile-updated').redirect('/profile');
-  });
-
-  app.patch('/profile/password', auth, (req, res) => {
-    const { ok, errors } = validate(req.body, {
-      current_password: ['required', (v) => (verifyPassword(v, req.user.password) ? null : 'Das aktuelle Passwort ist falsch.')],
-      password: 'required|confirmed|min:8',
-    });
-    if (!ok) return res.withErrors(errors);
-    db.update('users', req.user.id, { password: hashPassword(req.body.password) });
-    res.flash('status', 'password-updated').redirect('/profile#sec-pw');
   });
 
   app.patch('/profile/darkmode', auth, (req, res) => {

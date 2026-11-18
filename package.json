@@ -1,7 +1,7 @@
 {
   "name": "dan-app",
   "productName": "DAN",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "DAN - Digitaler Ausbildungsnachweis als lokale Desktop-App",
   "main": "src/main.js",
@@ -38,7 +38,6 @@
     }
   },
   "dependencies": {
-    "bcryptjs": "^2.4.3",
     "ejs": "^3.1.10",
     "express": "^4.22.3",
     "pdf-lib": "^1.17.1"

@@ -280,10 +280,6 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             Persönliche Daten
         </a>
-        <a href="#sec-pw" class="profil-subnav-item" data-section="sec-pw">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            Passwort
-        </a>
         <a href="#sec-sig" class="profil-subnav-item" data-section="sec-sig">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 17l4-8 4 4 4-6 4 10"/></svg>
             Meine Signatur
@@ -300,7 +296,7 @@
             </div>
             <div>
                 <h1><%= user.full_name %></h1>
-                <p><span><%= user.email %></span></p>
+                <p><span><%= user.abteilung || 'Auszubildende/r' %></span></p>
             </div>
         </div>
 
@@ -312,7 +308,7 @@
                 </div>
                 <div class="profil-card-header-text">
                     <h2>Persönliche Daten</h2>
-                    <p>Name, E-Mail und Ausbildungszeitraum</p>
+                    <p>Name, Abteilung und Ausbildungszeitraum</p>
                 </div>
             </div>
             <div class="profil-card-body">
@@ -325,7 +321,7 @@
                     </div>
                 <% } %>
 
-                <% if (Object.keys(errors).length && !errors.current_password && !errors.password && !errors.signatur_canvas) { %>
+                <% if (Object.keys(errors).length && !errors.signatur_canvas) { %>
                     <div class="dan-alert danger">
                         <div class="dan-alert-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
                         <div class="dan-alert-title" style="font-weight:500"><%= Object.values(errors)[0] %></div>
@@ -357,15 +353,6 @@
                         </div>
                     </div>
 
-                    <div class="dan-field" style="margin-bottom:16px">
-                        <label class="dan-label" for="email">E-Mail-Adresse</label>
-                        <input type="email" id="email" name="email" class="dan-input"
-                               value="<%= old('email', user.email) %>"
-                               required autocomplete="email"/>
-                        <% if (errors['email']) { const message = errors['email']; %>
-                            <span class="error-msg" style="font-size:11px;color:var(--dan-danger)"><%= message %></span>
-                        <% } %>
-                    </div>
 
                         <div class="dan-grid dan-grid-2" style="margin-bottom:16px">
                             <div class="dan-field">
@@ -406,65 +393,6 @@
         </section>
 
         
-        <section class="card profil-card" id="sec-pw">
-            <div class="profil-card-header">
-                <div class="profil-card-icon">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--dan-primary-700)" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                </div>
-                <div class="profil-card-header-text">
-                    <h2>Passwort ändern</h2>
-                    <p>Mindestens 8 Zeichen empfohlen</p>
-                </div>
-            </div>
-            <div class="profil-card-body">
-
-                <% if (session('status') === 'password-updated') { %>
-                    <div class="dan-alert success">
-                        <div class="dan-alert-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
-                        <div class="dan-alert-title" style="font-weight:500">Passwort erfolgreich geändert.</div>
-                    </div>
-                <% } %>
-
-                <form method="POST" action="<%= route('profile.password') %>">
-                    <input type="hidden" name="_method" value="PATCH">
-
-                    <div class="dan-field" style="margin-bottom:16px">
-                        <label class="dan-label" for="current_password">Aktuelles Passwort</label>
-                        <input type="password" id="current_password" name="current_password" class="dan-input"
-                               autocomplete="current-password" placeholder="••••••••"/>
-                        <% if (errors['current_password']) { const message = errors['current_password']; %>
-                            <span class="error-msg" style="font-size:11px;color:var(--dan-danger)"><%= message %></span>
-                        <% } %>
-                    </div>
-
-                    <div class="dan-field" style="margin-bottom:16px">
-                        <label class="dan-label" for="password">Neues Passwort</label>
-                        <input type="password" id="password" name="password" class="dan-input"
-                               autocomplete="new-password" placeholder="••••••••"
-                               oninput="danPwStrength(this.value)"/>
-                        <div class="profil-pw-strength">
-                            <div class="profil-pw-bar" id="pb1"></div>
-                            <div class="profil-pw-bar" id="pb2"></div>
-                            <div class="profil-pw-bar" id="pb3"></div>
-                            <div class="profil-pw-bar" id="pb4"></div>
-                        </div>
-                        <% if (errors['password']) { const message = errors['password']; %>
-                            <span class="error-msg" style="font-size:11px;color:var(--dan-danger)"><%= message %></span>
-                        <% } %>
-                    </div>
-
-                    <div class="dan-field" style="margin-bottom:4px">
-                        <label class="dan-label" for="password_confirmation">Passwort bestätigen</label>
-                        <input type="password" id="password_confirmation" name="password_confirmation" class="dan-input"
-                               autocomplete="new-password" placeholder="••••••••"/>
-                    </div>
-
-                    <div style="display:flex;justify-content:flex-end;padding-top:4px">
-                        <button type="submit" class="btn btn-primary">Passwort ändern</button>
-                    </div>
-                </form>
-            </div>
-        </section>
 
         
         <section class="card profil-card" id="sec-sig">
@@ -580,16 +508,6 @@
 </div>
 
 <script>
-    /* ── Password strength indicator ── */
-    function danPwStrength(v) {
-        const bars = ['pb1','pb2','pb3','pb4'].map(id => document.getElementById(id));
-        const score = Math.min(4, Math.floor(v.length / 3));
-        bars.forEach((b, i) => {
-            if (!b) return;
-            b.className = 'profil-pw-bar';
-            if (i < score) b.classList.add(score >= 3 ? 'ok' : 'warn');
-        });
-    }
 
     /* ── Signature tab switcher ── */
     function danSwitchSigTab(tab, btn) {
@@ -698,7 +616,7 @@
     }
 
     /* ── Subnav active state on scroll ── */
-    const danSections = ['sec-personal','sec-pw','sec-sig'];
+    const danSections = ['sec-personal','sec-sig'];
     const danNavItems = document.querySelectorAll('.profil-subnav-item[data-section]');
 
     function danUpdateNav() {
