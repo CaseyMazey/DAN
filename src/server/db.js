@@ -121,7 +121,13 @@ function dbVal(v) {
 
 class Db {
   constructor(file) {
-    this.raw = new DatabaseSync(file);
+    this.file = file;
+    this.oeffne();
+  }
+
+  /** (Wieder-)oeffnet die Datenbankdatei, z.B. nach einer Wiederherstellung. */
+  oeffne() {
+    this.raw = new DatabaseSync(this.file);
     this.raw.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 3000;');
     this.migrate();
   }
@@ -170,4 +176,4 @@ class Db {
   close() { this.raw.close(); }
 }
 
-module.exports = { Db, hydrate };
+module.exports = { Db, hydrate, SCHEMA_VERSION: SCHEMA.length };

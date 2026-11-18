@@ -34,6 +34,7 @@ const ROUTES = {
   'aufgaben.archivieren': '/aufgaben/:id/archivieren', 'aufgaben.wiederherstellen': '/aufgaben/:id/wiederherstellen',
   'profile.edit': '/profile', 'profile.update': '/profile',
   'profile.darkmode': '/profile/darkmode', 'profile.signatur': '/profile/signatur', 'profile.signatur.bild': '/profile/signatur/bild',
+  'sicherung': '/sicherung', 'sicherung.wiederherstellen': '/sicherung/wiederherstellen',
 };
 
 function route(name, param) {
@@ -86,7 +87,7 @@ function createApp({ dataDir, appToken = null }) {
 
   app.use('/assets', express.static(path.join(PUBLIC, 'assets'), { maxAge: '1d' }));
   app.use(express.static(PUBLIC, { index: false }));
-  app.use(express.urlencoded({ extended: true, limit: '8mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '60mb' }));
   app.use(express.json({ limit: '8mb' }));
   // Formular-Methodenueberschreibung (_method=PATCH/PUT/DELETE) wie Laravel.
   app.use((req, res, next) => {

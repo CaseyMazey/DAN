@@ -284,6 +284,10 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 17l4-8 4 4 4-6 4 10"/></svg>
             Meine Signatur
         </a>
+        <a href="#sec-backup" class="profil-subnav-item" data-section="sec-backup">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Datensicherung
+        </a>
     </nav>
 
     
@@ -321,7 +325,7 @@
                     </div>
                 <% } %>
 
-                <% if (Object.keys(errors).length && !errors.signatur_canvas) { %>
+                <% if (Object.keys(errors).length && !errors.signatur_canvas && !errors.sicherung) { %>
                     <div class="dan-alert danger">
                         <div class="dan-alert-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
                         <div class="dan-alert-title" style="font-weight:500"><%= Object.values(errors)[0] %></div>
@@ -504,6 +508,32 @@
             </div>
         </section>
 
+        <section class="card profil-card" id="sec-backup">
+            <div class="profil-card-header">
+                <div class="profil-card-icon">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--dan-primary-700)" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </div>
+                <div class="profil-card-header-text">
+                    <h2>Datensicherung</h2>
+                    <p>Alle Berichte, Aufgaben, Noten und deine Signatur in einer Datei</p>
+                </div>
+            </div>
+            <div class="profil-card-body">
+                <div style="display:flex;flex-direction:column;gap:18px">
+                    <div>
+                        <div style="font-size:13px;font-weight:600;margin-bottom:4px">Sicherung erstellen</div>
+                        <div style="font-size:12.5px;color:var(--dan-text-muted);margin-bottom:10px">Speichert eine <code>.dan</code>-Datei, z.B. auf einem USB-Stick oder in der Cloud.</div>
+                        <a href="<%= route('sicherung') %>" class="btn btn-primary btn-sm">Sicherung herunterladen</a>
+                    </div>
+                    <div class="profil-divider">Wiederherstellen</div>
+                    <div>
+                        <div style="font-size:12.5px;color:var(--dan-text-muted);margin-bottom:10px">Ersetzt alle aktuellen Daten durch eine Sicherung. Der bisherige Stand wird vorher automatisch aufgehoben.</div>
+                        <%- include('partials/wiederherstellen', { btnClass: 'btn btn-secondary btn-sm' }) %>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </main>
 </div>
 
@@ -616,7 +646,7 @@
     }
 
     /* ── Subnav active state on scroll ── */
-    const danSections = ['sec-personal','sec-sig'];
+    const danSections = ['sec-personal','sec-sig','sec-backup'];
     const danNavItems = document.querySelectorAll('.profil-subnav-item[data-section]');
 
     function danUpdateNav() {

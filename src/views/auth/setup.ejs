@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Konto einrichten — DAN</title>
+    <title>Einrichten — DAN</title>
     <link rel="stylesheet" href="/fonts/fonts.css">
     <link rel="stylesheet" href="/assets/app.css">
     <script>(function(){if(localStorage.getItem('dan_dark')==='1')document.documentElement.setAttribute('data-theme','dark');})();</script>
@@ -152,9 +152,9 @@
             gespeichert. Danach öffnet sich DAN bei jedem Start direkt.
         </div>
 
-        <% if (Object.keys(errors).length) { %>
+        <% if (Object.keys(errors).filter(k => k !== 'sicherung').length) { %>
             <div class="error-box">
-                <% for (const e of Object.values(errors)) { %><p><%= e %></p><% } %>
+                <% for (const [k, e] of Object.entries(errors)) { if (k !== 'sicherung') { %><p><%= e %></p><% } } %>
             </div>
         <% } %>
 
@@ -192,6 +192,12 @@
                 <button type="submit" class="btn-submit">Los geht's</button>
             </div>
         </form>
+
+        <div class="form-body" style="padding-top:0">
+            <div class="divider"></div>
+            <div class="section-title">Schon eine DAN-Sicherung?</div>
+            <%- include('../partials/wiederherstellen') %>
+        </div>
     </div>
 </div>
 </body>

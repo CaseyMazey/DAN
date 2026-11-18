@@ -19,7 +19,8 @@ Andere Programme und Webseiten im Browser kommen nicht an deine Daten.
 - `dan.sqlite`: alle Wochenberichte, Aufgaben, Noten, Zeiträume
 - `signaturen\`: deine Unterschrift als Bild
 
-Für eine Sicherung kopierst du diesen Ordner, während DAN geschlossen ist.
+Sichern geht direkt in der App: **Mein Profil → Datensicherung**. Dort lädst du eine `.dan`-Datei herunter
+oder stellst eine Sicherung wieder her (auch gleich auf der Einrichtungsseite nach einer Neuinstallation).
 Beim Deinstallieren bleiben die Daten erhalten.
 
 ## Daten aus DAN2 übernehmen (einmalig)
@@ -32,6 +33,10 @@ node scripts/import-dan2.js --azubi 1
 
 Das Skript übernimmt Berichte, Einträge, Aufgaben, Noten, Fächer, Zeiträume und die Signatur eines
 Azubi-Kontos nach `%APPDATA%\DAN\daten`.
+
+> Hinweis: Aus der Claude-Desktop-App heraus gestartete Programme schreiben AppData-Pfade in einen
+> umgeleiteten Paketordner. Dann besser mit `--ziel` in einen normalen Ordner importieren, daraus eine
+> `.dan`-Sicherung machen und diese in der App wiederherstellen.
 
 ## Funktionen
 

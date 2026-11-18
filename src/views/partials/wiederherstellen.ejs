@@ -1,0 +1,27 @@
+<%# Formular: Sicherungsdatei (.dan) auswaehlen und wiederherstellen. Datei wird als Data-URL uebertragen. %>
+<form method="POST" action="<%= route('sicherung.wiederherstellen') %>" id="dan-restore-form" onsubmit="return danRestore(event)">
+    <input type="hidden" name="sicherung" id="dan-restore-data">
+    <input type="file" id="dan-restore-file" accept=".dan,.sqlite" style="display:none" onchange="danRestorePicked(this)">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button type="button" class="<%= locals.btnClass || 'btn btn-secondary' %>" onclick="document.getElementById('dan-restore-file').click()">Sicherungsdatei auswählen …</button>
+        <span id="dan-restore-name" style="font-size:12px;color:var(--dan-text-muted, #64748B)"></span>
+    </div>
+    <% if (errors['sicherung']) { %>
+        <div style="color:var(--dan-danger, #DC2626);font-size:12.5px;margin-top:8px"><%= errors['sicherung'] %></div>
+    <% } %>
+</form>
+<script>
+    function danRestorePicked(input) {
+        const f = input.files && input.files[0];
+        if (!f) return;
+        document.getElementById('dan-restore-name').textContent = f.name;
+        if (!confirm('Alle aktuellen Daten in DAN durch die Sicherung "' + f.name + '" ersetzen?\n\nDer bisherige Stand wird vorher automatisch aufgehoben.')) { input.value = ''; return; }
+        const reader = new FileReader();
+        reader.onload = () => {
+            document.getElementById('dan-restore-data').value = reader.result;
+            document.getElementById('dan-restore-form').submit();
+        };
+        reader.readAsDataURL(f);
+    }
+    function danRestore(e) { e.preventDefault(); return false; }
+</script>

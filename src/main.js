@@ -108,16 +108,20 @@ function oeffneFenster(url, dataDir) {
   void dataDir;
 }
 
-/** PDF-Downloads: Speichern-Dialog im Downloads-Ordner, danach Datei oeffnen. */
+/** Downloads: Speichern-Dialog im Downloads-Ordner; PDFs werden danach geoeffnet. */
 function downloadsEinrichten() {
   session.defaultSession.on('will-download', (event, item) => {
+    const name = item.getFilename();
+    const istPdf = /\.pdf$/i.test(name);
     item.setSaveDialogOptions({
-      title: 'PDF speichern',
-      defaultPath: path.join(app.getPath('downloads'), item.getFilename()),
-      filters: [{ name: 'PDF', extensions: ['pdf'] }],
+      title: istPdf ? 'PDF speichern' : 'Datensicherung speichern',
+      defaultPath: path.join(app.getPath(istPdf ? 'downloads' : 'documents'), name),
+      filters: istPdf ? [{ name: 'PDF', extensions: ['pdf'] }] : [{ name: 'DAN-Sicherung', extensions: ['dan'] }],
     });
     item.once('done', (e, state) => {
-      if (state === 'completed') shell.openPath(item.getSavePath());
+      if (state !== 'completed') return;
+      if (istPdf) shell.openPath(item.getSavePath());
+      else shell.showItemInFolder(item.getSavePath());
     });
   });
 }

@@ -179,3 +179,35 @@ test('Lokaler Server nimmt nur Anfragen aus dem DAN-Fenster an', async () => {
     s.close(); geschuetzt.locals.db.close(); fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('Datensicherung: herunterladen und in eine frische Installation zuruecklesen', async () => {
+  // Sicherung aus der laufenden Test-App (mit Konto, Aufgaben, Signatur) ziehen
+  let r = await req('GET', '/sicherung');
+  assert.strictEqual(r.status, 200);
+  assert.match(r.headers.get('content-disposition'), /DAN-Sicherung-.*\.dan/);
+  const datei = Buffer.from(await r.arrayBuffer());
+  assert.strictEqual(datei.subarray(0, 15).toString(), 'SQLite format 3');
+
+  // Zweite, leere Installation
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dan-restore-'));
+  const app2 = createApp({ dataDir: dir });
+  const s2 = await new Promise(res => { const x = app2.listen(0, '127.0.0.1', () => res(x)); });
+  const url2 = `http://127.0.0.1:${s2.address().port}`;
+  try {
+    const post = (body) => fetch(url2 + '/sicherung/wiederherstellen', { method: 'POST', redirect: 'manual', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Referer: url2 + '/einrichten' }, body: new URLSearchParams(body).toString() });
+    // Kaputte Datei wird abgelehnt
+    r = await post({ sicherung: 'data:application/octet-stream;base64,' + Buffer.from('kein sqlite').toString('base64') });
+    assert.strictEqual(r.headers.get('location'), '/einrichten');
+    // Echte Sicherung
+    r = await post({ sicherung: 'data:application/octet-stream;base64,' + datei.toString('base64') });
+    assert.strictEqual(r.headers.get('location'), '/dashboard');
+    const dash = await (await fetch(url2 + '/dashboard')).text();
+    assert.match(dash, /Hallo, Maxi/);
+    const kal = await (await fetch(url2 + '/kalender?jahr=2')).text();
+    assert.match(kal, /Mathe/);
+    assert.strictEqual((await fetch(url2 + '/profile/signatur/bild')).status, 200);
+    assert.ok(fs.readdirSync(path.join(dir, 'vorher')).length === 1, 'vorheriger Stand wurde aufgehoben');
+  } finally {
+    s2.close(); app2.locals.db.close(); fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

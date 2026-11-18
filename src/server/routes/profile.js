@@ -1,11 +1,40 @@
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
+const os = require('node:os');
 const { validate } = require('../validate');
+const { erstelleSicherung, stelleWiederHer } = require('../sicherung');
+const { D } = require('../dates');
 
 module.exports = (app, { db, dataDir }, { auth, named }) => {
   app.get('/profile', auth, named('profile.edit'), (req, res) => {
     res.page('profile', { title: 'Mein Profil' });
+  });
+
+  // ── Datensicherung ────────────────────────────────────────────────────
+  // Auch ohne eingerichtetes Konto erreichbar, damit man direkt nach der
+  // Installation eine Sicherung zuruecklesen kann.
+  app.get('/sicherung', (req, res, next) => {
+    const tmp = path.join(os.tmpdir(), `dan-sicherung-${Date.now()}.dan`);
+    try {
+      erstelleSicherung(db, dataDir, tmp);
+      res.download(tmp, `DAN-Sicherung-${D.now().format('Y-m-d')}.dan`, () => fs.rmSync(tmp, { force: true }));
+    } catch (e) { fs.rmSync(tmp, { force: true }); next(e); }
+  });
+
+  app.post('/sicherung/wiederherstellen', (req, res) => {
+    const m = String(req.body.sicherung || '').match(/^data:[^;]*;base64,([A-Za-z0-9+/=]+)$/);
+    if (!m) return res.withErrors({ sicherung: 'Bitte eine Sicherungsdatei (.dan) auswählen.' });
+    const tmp = path.join(os.tmpdir(), `dan-wiederherstellen-${Date.now()}.dan`);
+    try {
+      fs.writeFileSync(tmp, Buffer.from(m[1], 'base64'));
+      const info = stelleWiederHer(db, dataDir, tmp);
+      res.flash('success', `Sicherung wiederhergestellt: ${info.berichte} Wochenberichte, ${info.aufgaben} Aufgaben.`).redirect('/dashboard');
+    } catch (e) {
+      res.withErrors({ sicherung: e.message || 'Die Sicherung konnte nicht wiederhergestellt werden.' });
+    } finally {
+      fs.rmSync(tmp, { force: true });
+    }
   });
 
   app.patch('/profile', auth, (req, res) => {
