@@ -10,6 +10,11 @@ const fs = require('node:fs');
 // Fuer Tests: eigener Datenordner (DAN_USERDATA), damit eine installierte DAN-Instanz unberuehrt bleibt.
 if (process.env.DAN_USERDATA) app.setPath('userData', process.env.DAN_USERDATA);
 
+// Linux-AppImage: Neuere Distributionen (z.B. Ubuntu 24.04) verbieten die Chromium-
+// Sandbox fuer AppImages, Electron startet dann gar nicht. DAN laedt ausschliesslich
+// eigene, lokale Inhalte - daher dort ohne Sandbox starten (das .deb-Paket braucht das nicht).
+if (process.platform === 'linux' && process.env.APPIMAGE) app.commandLine.appendSwitch('no-sandbox');
+
 // Nur eine Instanz: ein zweiter Klick aufs Icon holt das offene Fenster nach vorn.
 if (!app.requestSingleInstanceLock()) {
   app.quit();
@@ -22,7 +27,7 @@ if (!app.requestSingleInstanceLock()) {
 }
 
 process.removeAllListeners('warning'); // "SQLite is experimental"-Hinweis ausblenden
-app.setAppUserModelId('de.dan.ausbildungsnachweis');
+if (process.platform === 'win32') app.setAppUserModelId('de.dan.ausbildungsnachweis');
 
 const PORT_WUNSCH = 47613; // fester Port, damit Einstellungen im Fenster (localStorage) erhalten bleiben
 let server = null;
@@ -41,7 +46,7 @@ async function start() {
   const url = `http://127.0.0.1:${port}`;
   await session.defaultSession.cookies.set({ url, name: 'dan_app', value: appToken, httpOnly: true, sameSite: 'strict' });
 
-  Menu.setApplicationMenu(null);
+  menueEinrichten();
   downloadsEinrichten();
   oeffneFenster(url, dataDir);
 
@@ -96,12 +101,12 @@ function oeffneFenster(url, dataDir) {
     if (!intern(ziel)) { e.preventDefault(); if (/^https?:/.test(ziel)) shell.openExternal(ziel); }
   });
 
-  // F5 = neu laden, Strg+P = drucken, F12 = Entwicklerwerkzeuge (Fehlersuche)
+  // F5 = neu laden, Strg/Cmd+P = drucken, F12 = Entwicklerwerkzeuge (Fehlersuche)
   win.webContents.on('before-input-event', (e, input) => {
     if (input.type !== 'keyDown') return;
     if (input.key === 'F5') { win.webContents.reload(); e.preventDefault(); }
     if (input.key === 'F12') { win.webContents.toggleDevTools(); e.preventDefault(); }
-    if (input.control && input.key.toLowerCase() === 'p') { win.webContents.print(); e.preventDefault(); }
+    if ((input.control || input.meta) && input.key.toLowerCase() === 'p') { win.webContents.print(); e.preventDefault(); }
   });
 
   win.loadURL(url);
@@ -124,6 +129,20 @@ function downloadsEinrichten() {
       else shell.showItemInFolder(item.getSavePath());
     });
   });
+}
+
+/**
+ * Windows/Linux: kein Menue (wie bisher). macOS braucht ein Programmmenue,
+ * sonst funktionieren Cmd+C/V/X/A/Z und Cmd+Q nicht.
+ */
+function menueEinrichten() {
+  if (process.platform !== 'darwin') { Menu.setApplicationMenu(null); return; }
+  Menu.setApplicationMenu(Menu.buildFromTemplate([
+    { role: 'appMenu' },
+    { role: 'editMenu' },
+    { label: 'Ansicht', submenu: [{ role: 'reload', label: 'Neu laden' }, { role: 'toggleDevTools' }, { type: 'separator' }, { role: 'resetZoom' }, { role: 'zoomIn' }, { role: 'zoomOut' }, { type: 'separator' }, { role: 'togglefullscreen' }] },
+    { role: 'windowMenu' },
+  ]));
 }
 
 function fehler(err) {

@@ -4,7 +4,8 @@
 //
 //   node scripts/import-dan2.js --azubi 1 [--ziel <Datenordner>] [--dan2 C:\xampp\htdocs\DAN2] [--force]
 //
-// Ziel ist standardmaessig %APPDATA%\DAN\daten (der Ordner der installierten App).
+// Ziel ist standardmaessig der Datenordner der App (Windows: %APPDATA%\DAN\daten,
+// macOS: ~/Library/Application Support/DAN/daten, Linux: ~/.config/DAN/daten).
 // DAN muss dabei geschlossen sein. Ohne --force bricht der Import ab, wenn dort
 // schon ein Konto existiert.
 
@@ -20,7 +21,12 @@ const args = Object.fromEntries(process.argv.slice(2).reduce((acc, a, i, arr) =>
 }, []));
 
 const AZUBI = Number(args.azubi);
-const ZIEL = args.ziel || path.join(process.env.APPDATA, 'DAN', 'daten');
+// Standard-Datenordner der App je System (entspricht Electron app.getPath('userData'))
+const os = require('node:os');
+const USERDATA = process.platform === 'win32' ? path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'DAN')
+  : process.platform === 'darwin' ? path.join(os.homedir(), 'Library', 'Application Support', 'DAN')
+  : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'DAN');
+const ZIEL = args.ziel || path.join(USERDATA, 'daten');
 const DAN2 = args.dan2 || 'C:\\xampp\\htdocs\\DAN2';
 
 // Laravel lief mit APP_TIMEZONE=UTC: Zeitstempel sind UTC -> in lokale Zeit wandeln.

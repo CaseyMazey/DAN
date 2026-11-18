@@ -1,0 +1,70 @@
+# Tests auf Windows, macOS und Linux bei jedem Push auf main und jedem Pull Request.
+# Zusaetzlich ein Probe-Build fuer alle drei Systeme (Dateien 7 Tage als Artefakt abrufbar).
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm test
+
+  package:
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            dist: dist:win
+          - os: macos-latest
+            dist: dist:mac
+          - os: ubuntu-latest
+            dist: dist:linux
+    runs-on: ${{ matrix.os }}
+    env:
+      # kein Apple-Entwicklerkonto: nicht nach Zertifikaten suchen (ad-hoc-Signatur, siehe package.json)
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run ${{ matrix.dist }}
+      - name: App-Start pruefen (Linux, ohne Bildschirm)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb >/dev/null
+          node scripts/start-check.js dist/linux-unpacked/dan
+      - name: App-Start pruefen (macOS)
+        if: runner.os == 'macOS'
+        run: node scripts/start-check.js "$(ls -d dist/mac*/DAN.app | head -1)/Contents/MacOS/DAN"
+      - name: App-Start pruefen (Windows)
+        if: runner.os == 'Windows'
+        run: node scripts/start-check.js dist/win-unpacked/DAN.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dan-${{ matrix.os }}
+          retention-days: 7
+          path: |
+            dist/*.exe
+            dist/*.dmg
+            dist/*.AppImage
+            dist/*.deb

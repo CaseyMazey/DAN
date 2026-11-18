@@ -1,21 +1,34 @@
 # DAN – Digitaler Ausbildungsnachweis (Desktop)
 
-Lokale Einzelplatz-Version von DAN: eine Windows-App, die per Klick aufs Icon startet.
+Lokale Einzelplatz-Version von DAN für **Windows, macOS und Linux**, die per Klick aufs Icon startet.
 Es gibt **kein PHP, kein XAMPP, keinen MySQL-Server**, keine Admins, keine Ausbilder und keine Anmeldung:
-DAN öffnet sich direkt (geschützt wird es durch dein Windows-Konto).
+DAN öffnet sich direkt (geschützt wird es durch dein Benutzerkonto am Rechner).
 
 ## Installieren
 
-`dist/DAN-Setup-<version>.exe` doppelklicken. Das Setup installiert DAN für deinen
-Windows-Benutzer und legt ein Icon auf dem Desktop und im Startmenü an.
-Beim ersten Start gibst du einmal Name und Ausbildungszeitraum ein, danach öffnet sich DAN direkt.
+Die Installer gibt es unter [Releases](https://github.com/CaseyMazey/DAN/releases).
+
+| System | Datei | Hinweis |
+|---|---|---|
+| Windows | `DAN-Setup-<version>.exe` | Doppelklick. Icon auf dem Desktop und im Startmenü. SmartScreen-Warnung: „Weitere Informationen“ → „Trotzdem ausführen“. |
+| macOS (Apple Silicon) | `DAN-mac-arm64-<version>.dmg` | DMG öffnen, DAN in „Programme“ ziehen. Beim ersten Start **Rechtsklick → Öffnen** (App ist nicht von Apple beglaubigt). |
+| macOS (Intel) | `DAN-mac-x64-<version>.dmg` | wie oben |
+| Linux (Debian/Ubuntu) | `DAN-linux-amd64-<version>.deb` | `sudo apt install ./DAN-linux-amd64-<version>.deb` (empfohlen) |
+| Linux (alle) | `DAN-linux-x86_64-<version>.AppImage` | `chmod +x` und starten |
+
+Beim ersten Start gibst du einmal Name und Ausbildungszeitraum ein (oder stellst eine Sicherung wieder her),
+danach öffnet sich DAN direkt.
 
 Der lokale Server von DAN nimmt nur Anfragen aus dem DAN-Fenster an (zufälliger Schlüssel pro Start).
 Andere Programme und Webseiten im Browser kommen nicht an deine Daten.
 
 ## Wo liegen meine Daten?
 
-`%APPDATA%\DAN\daten\`
+- Windows: `%APPDATA%\DAN\daten\`
+- macOS: `~/Library/Application Support/DAN/daten/`
+- Linux: `~/.config/DAN/daten/`
+
+Darin:
 - `dan.sqlite`: alle Wochenberichte, Aufgaben, Noten, Zeiträume
 - `signaturen\`: deine Unterschrift als Bild
 
@@ -54,7 +67,8 @@ Azubi-Kontos nach `%APPDATA%\DAN\daten`.
 npm install
 npm start            # App im Entwicklungsmodus starten
 npm test             # Tests
-npm run dist         # Installer bauen -> dist/DAN-Setup-<version>.exe
+npm run dist:win     # Installer bauen (auch dist:mac auf einem Mac, dist:linux unter Linux)
+node scripts/start-check.js dist/win-unpacked/DAN.exe   # gebaute App starten und pruefen
 node scripts/dev-server.js   # nur Server, im Browser unter http://127.0.0.1:8123 (Testdaten in .devdata)
 ```
 
@@ -63,3 +77,9 @@ Aufbau:
 - `src/server/`: Express-Server, SQLite (eingebautes `node:sqlite`), Fachlogik, PDF (pdf-lib)
 - `src/views/`: EJS-Vorlagen (Design aus der Laravel-Version übernommen)
 - `src/public/`: CSS/JS/Schriften, `src/resources/`: IHK-Vorlage und Icon
+
+## Neue Version veröffentlichen
+
+Version in `package.json` erhöhen, committen, dann `git tag v<version>` und `git push --tags`.
+GitHub Actions baut DAN auf Windows, macOS und Linux und legt das Release mit allen Installern an.
+Bei jedem Push auf `main` laufen die Tests auf allen drei Systemen, dazu ein Probe-Build mit Startprüfung.
