@@ -42,7 +42,7 @@ DAN gibt es für Windows, macOS und Linux, direkt hier von GitHub.
 2. Die Datei ausführen. DAN installiert sich für deinen Benutzer, ohne Admin-Rechte, mit Verknüpfung auf dem Desktop und im Startmenü.
 3. Erscheint „Der Computer wurde durch Windows geschützt“: auf **Weitere Informationen → Trotzdem ausführen** klicken. Die Meldung kommt, weil das Setup nicht signiert ist.
 
-**Update:** Neue Version herunterladen und ausführen, deine Daten bleiben erhalten. Deinstallieren geht über Einstellungen → Apps, die Daten bleiben auch dabei erhalten.
+**Updates kommen automatisch** (ab Version 1.5.0): DAN lädt neue Versionen im Hintergrund und fragt, ob es gleich neu starten soll, sonst wird beim Beenden installiert. Von Hand: Profil → *Updates* → *Nach Updates suchen*. Deine Daten bleiben erhalten. Wer eine Version vor 1.5.0 hat, installiert einmal von Hand neu. Deinstallieren geht über Einstellungen → Apps, die Daten bleiben auch dabei erhalten.
 
 ### macOS
 
@@ -55,7 +55,7 @@ DAN gibt es für Windows, macOS und Linux, direkt hier von GitHub.
    - Klappt das nicht (macOS 15 und neuer): **Systemeinstellungen → Datenschutz & Sicherheit**, nach unten scrollen, bei DAN auf **„Dennoch öffnen“** klicken.
    - Meldet macOS, die App sei **„beschädigt“**: Terminal öffnen und `xattr -dr com.apple.quarantine /Applications/DAN.app` eingeben, danach normal öffnen.
 
-**Update:** Neue Version herunterladen und wieder in „Programme“ ziehen. Deine Daten bleiben erhalten.
+**Update:** DAN meldet neue Versionen selbst und öffnet die Download-Seite. Neue Version herunterladen und wieder in „Programme“ ziehen. Deine Daten bleiben erhalten.
 
 ### Linux
 

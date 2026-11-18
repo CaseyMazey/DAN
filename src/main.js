@@ -31,6 +31,32 @@ if (process.platform === 'win32') app.setAppUserModelId('de.dan.ausbildungsnachw
 
 const PORT_WUNSCH = 47613; // fester Port, damit Einstellungen im Fenster (localStorage) erhalten bleiben
 let server = null;
+let hauptfenster = null;
+
+// ── Automatische Updates (wie bei NEXUS) ────────────────────────────────
+// Nur in der installierten App; aus dem Quellcode und in Tests (DAN_USERDATA) passiert nichts.
+const { Updater } = require('./updater');
+const RELEASES = 'https://github.com/CaseyMazey/DAN/releases/latest';
+const gefragt = new Set(); // pro Version nur einmal fragen
+const updater = new Updater({
+  enabled: app.isPackaged && !process.env.DAN_USERDATA,
+  releasesUrl: RELEASES,
+  onState: (s) => {
+    if (gefragt.has(s.version) || !['ready', 'available'].includes(s.status)) return;
+    gefragt.add(s.version);
+    const bereit = s.status === 'ready';
+    const opts = {
+      type: 'info', title: 'DAN',
+      message: bereit ? `DAN ${s.version} ist bereit.` : `DAN ${s.version} ist da.`,
+      detail: bereit
+        ? 'Jetzt neu starten, um das Update zu installieren? Sonst wird es beim nächsten Beenden installiert. Deine Daten bleiben erhalten.'
+        : 'Auf diesem System kann sich DAN nicht selbst aktualisieren. Die neue Version auf GitHub herunterladen?',
+      buttons: [bereit ? 'Jetzt neu starten' : 'Herunterladen', 'Später'], defaultId: 0, cancelId: 1, noLink: true,
+    };
+    const frage = hauptfenster && !hauptfenster.isDestroyed() ? dialog.showMessageBox(hauptfenster, opts) : dialog.showMessageBox(opts);
+    frage.then((r) => { if (r.response === 0) updater.install(); });
+  },
+});
 
 async function start() {
   const dataDir = path.join(app.getPath('userData'), 'daten');
@@ -41,7 +67,7 @@ async function start() {
   // Zufaelliges Geheimnis pro Start: nur das DAN-Fenster bekommt es als Cookie,
   // andere Programme oder Webseiten koennen den lokalen Server nicht benutzen.
   const appToken = randomToken();
-  const web = createApp({ dataDir, appToken });
+  const web = createApp({ dataDir, appToken, updater, version: app.getVersion() });
   const port = await lausche(web, PORT_WUNSCH).catch(() => lausche(web, 0));
   const url = `http://127.0.0.1:${port}`;
   await session.defaultSession.cookies.set({ url, name: 'dan_app', value: appToken, httpOnly: true, sameSite: 'strict' });
@@ -49,6 +75,7 @@ async function start() {
   menueEinrichten();
   downloadsEinrichten();
   oeffneFenster(url, dataDir);
+  updater.start();
 
   app.on('window-all-closed', () => app.quit());
   app.on('before-quit', () => {
@@ -80,6 +107,7 @@ function oeffneFenster(url, dataDir) {
     autoHideMenuBar: true,
     webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: true },
   });
+  hauptfenster = win;
   if (state.maximized) win.maximize();
   win.once('ready-to-show', () => win.show());
 

@@ -6,9 +6,20 @@ const { validate } = require('../validate');
 const { erstelleSicherung, stelleWiederHer } = require('../sicherung');
 const { D } = require('../dates');
 
-module.exports = (app, { db, dataDir }, { auth, named }) => {
+module.exports = (app, { db, dataDir, updater, version }, { auth, named }) => {
   app.get('/profile', auth, named('profile.edit'), (req, res) => {
-    res.page('profile', { title: 'Mein Profil' });
+    res.page('profile', { title: 'Mein Profil', appVersion: version, update: updater ? updater.state : { status: 'off' } });
+  });
+
+  // ── Updates: suchen, bzw. installieren / herunterladen, wenn eins bereitliegt ──
+  app.post('/update', auth, async (req, res) => {
+    if (!updater) return res.redirect('/profile#sec-update');
+    const s = updater.state.status;
+    if (s === 'ready' || s === 'available') { updater.install(); return res.redirect('/profile#sec-update'); }
+    await updater.check(true);
+    // kurz warten, damit "keine neue Version" oder "wird geladen" gleich angezeigt wird
+    await new Promise((r) => setTimeout(r, 1500));
+    res.redirect('/profile#sec-update');
   });
 
   // ── Datensicherung ────────────────────────────────────────────────────

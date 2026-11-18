@@ -77,7 +77,7 @@ const helpers = {
   nl2br: (s) => ejs.escapeXML(String(s ?? '')).replace(/\n/g, '<br>'),
 };
 
-function createApp({ dataDir, appToken = null }) {
+function createApp({ dataDir, appToken = null, updater = null, version = '' }) {
   fs.mkdirSync(path.join(dataDir, 'signaturen'), { recursive: true });
   const db = new Db(path.join(dataDir, 'dan.sqlite'));
   const app = express();
@@ -135,7 +135,7 @@ function createApp({ dataDir, appToken = null }) {
     next();
   });
 
-  const ctx = { db, logic, route, dataDir };
+  const ctx = { db, logic, route, dataDir, updater, version };
   // Keine Anmeldung: solange noch kein Konto eingerichtet ist, geht es zur Einrichtung.
   const guest = (req, res, next) => (req.user ? res.redirect('/dashboard') : next());
   const auth = (req, res, next) => (req.user ? next() : req.wantsJson() ? res.status(409).json({ error: 'Noch nicht eingerichtet' }) : res.redirect('/einrichten'));

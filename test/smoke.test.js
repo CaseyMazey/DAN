@@ -154,6 +154,7 @@ test('Ersteinrichtung ohne Login und alle Seiten', async () => {
   await html('/profile');
   await req('POST', '/profile', { _method: 'PATCH', vorname: 'Maxi', nachname: 'Muster', ausbildungsbeginn: beginn, abteilung: 'IT-Service' });
   assert.match(await html('/profile'), /IT-Service/);
+  assert.match(await html('/profile'), /id="sec-update"[\s\S]*Updates gibt es nur in der installierten App/); // ohne Updater (Quellcode)
 
   // 404 fuer fremde/unbekannte IDs
   r = await req('GET', '/wochenbericht/999999');
