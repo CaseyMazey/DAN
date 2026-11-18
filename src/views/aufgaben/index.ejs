@@ -366,7 +366,8 @@ function toggleKanbanGroup(btn) {
 ;(function () {
     const state = kanbanGroupState()
     document.querySelectorAll('.kanban-group').forEach(group => {
-        if (state[group.dataset.group]) group.classList.remove('collapsed')
+        // Standard: aufgeklappt - nur Gruppen, die man selbst zugeklappt hat, bleiben zu.
+        if (state[group.dataset.group] !== false) group.classList.remove('collapsed')
     })
 })()
 
